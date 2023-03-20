@@ -112,6 +112,14 @@ namespace quda {
 #else
       errorQuda("QDPJIT interface has not been built\n");
 #endif
+//     } else if (out.FieldOrder() == QUDA_OPENQCD_FIELD_ORDER) {
+
+// #ifdef BUILD_OPENQCD_INTERFACE
+//       using O = OpenQCDDiracOrder<FloatOut, Ns, Nc>;
+//       CopyColorSpinor<Ns, Nc, O, I, param_t>(out, in, param);
+// #else
+//       errorQuda("OpenQCD interface has not been built\n");
+// #endif
     } else {
       errorQuda("Order %d not defined (Ns = %d, Nc = %d, precision = %d)", out.FieldOrder(), Ns, Nc, out.Precision());
     }
@@ -153,6 +161,14 @@ namespace quda {
 #else
       errorQuda("QDPJIT interface has not been built\n");
 #endif
+//     } else if (in.FieldOrder() == QUDA_OPENQCD_FIELD_ORDER) {
+
+// #ifdef BUILD_OPENQCD_INTERFACE
+//       using ColorSpinor = OpenQCDDiracOrder<FloatIn, Ns, Nc>;
+//       genericCopyColorSpinor<Ns, Nc, ColorSpinor>(param);
+// #else
+//       errorQuda("OpenQCD interface has not been built\n");
+// #endif
     } else {
       errorQuda("Order %d not defined (Ns=%d, Nc=%d, precision = %d)", in.FieldOrder(), Ns, Nc, in.Precision());
     }
@@ -170,10 +186,10 @@ namespace quda {
     if (dst.Volume() != src.Volume()) errorQuda("Volumes %lu %lu don't match", dst.Volume(), src.Volume());
 
     if (!( dst.SiteOrder() == src.SiteOrder() ||
-	   (dst.SiteOrder() == QUDA_EVEN_ODD_SITE_ORDER &&
-	    src.SiteOrder() == QUDA_ODD_EVEN_SITE_ORDER) ||
-	   (dst.SiteOrder() == QUDA_ODD_EVEN_SITE_ORDER &&
-	    src.SiteOrder() == QUDA_EVEN_ODD_SITE_ORDER) ) ) {
+     (dst.SiteOrder() == QUDA_EVEN_ODD_SITE_ORDER &&
+      src.SiteOrder() == QUDA_ODD_EVEN_SITE_ORDER) ||
+     (dst.SiteOrder() == QUDA_ODD_EVEN_SITE_ORDER &&
+      src.SiteOrder() == QUDA_EVEN_ODD_SITE_ORDER) ) ) {
       errorQuda("Subset orders %d %d don't match", dst.SiteOrder(), src.SiteOrder());
     }
 

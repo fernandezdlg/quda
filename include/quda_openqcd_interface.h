@@ -3,13 +3,21 @@
 #include <enum_quda.h>
 #include <quda.h>
 
+// TODO: (later) The ipt and other functions can be incorporated here (so no reordering needed in OpenQXD side)
+// OpenQxD helpers:
+// #include "../../openQxD-devel/include/su3.h"
+// #include "../../openQxD-devel/include/flags.h"
+// #include "../../openQxD-devel/include/utils.h"
+// #include "../../openQxD-devel/include/lattice.h"
+// #include "../../openQxD-devel/include/global.h"
+
 /**
  * @file    quda_openqcd_interface.h
  *
  * @section Description
  *
  * The header file defines the milc interface to enable easy
- * interfacing between QUDA and the OpenQCS software.
+ * interfacing between QUDA and the OpenQCD software.
  */
 
 #ifdef __cplusplus
@@ -20,10 +28,10 @@ extern "C" {
  * Parameters related to problem size and machine topology.
  */
 typedef struct {
-  const int *latsize;  /** Local lattice dimensions L0, L1, L2, L3 */ // FIXME:
-  const int *machsize; /** Machine grid size NPROC0, NPROC1, NPROC2, NPROC3*/ // FIXME:
-  const int *blksize;  /** Blocking size NPROC0_BLK, NPROC1_BLK, NPROC2_BLK, NPROC3_BLK */ // FIXME:
-  int device;          /** GPU device  number */
+  const int *latsize; /** Local lattice dimensions L0, L1, L2, L3 */                      // FIXME:
+  const int *machsize; /** Machine grid size NPROC0, NPROC1, NPROC2, NPROC3*/             // FIXME:
+  const int *blksize; /** Blocking size NPROC0_BLK, NPROC1_BLK, NPROC2_BLK, NPROC3_BLK */ // FIXME:
+  int device;                                                                             /** GPU device number */
   // const int *ipt;
 } openQCD_QudaLayout_t;
 
@@ -54,7 +62,7 @@ void openQCD_qudaInit(openQCD_QudaInitArgs_t input);
  */
 void openQCD_qudaFinalize(void);
 
-#if 0
+#if 0 /* TODO: check what to declare */
 // leave that here for now
   /**
    * Allocate pinned memory suitable for CPU-GPU transfers
@@ -89,10 +97,9 @@ void openQCD_qudaFinalize(void);
  */
 
 typedef struct {
-  // TODO: work out what we want to expose here
+  // TODO: work out what we want to expose here 
   int max_iter; /** Maximum number of iterations */
-  QudaParity
-    evenodd; /** Which parity are we working on ? (options are QUDA_EVEN_PARITY, QUDA_ODD_PARITY, QUDA_INVALID_PARITY */
+  QudaParity evenodd; /** Which parity are we working on ? (options are QUDA_EVEN_PARITY, QUDA_ODD_PARITY, QUDA_INVALID_PARITY */
   int mixed_precision;          /** Whether to use mixed precision or not (1 - yes, 0 - no) */
   double boundary_phase[4];     /** Boundary conditions */
   int make_resident_solution;   /** Make the solution resident and don't copy back */
@@ -157,7 +164,6 @@ void openQCD_qudaLoadGaugeField(int external_precision, int quda_precision, open
                                 const void *milc_link);
 
 void openQCD_qudaPlaquette(int precision, double plaq[3], void *gauge);
-
 
 // int openQCD_ipt(int iy);
 
