@@ -39,7 +39,7 @@ namespace quda {
       bytes = siteDim * (x[0]+4)*(x[1]+2)*(x[2]+2)*(x[3]+2) * nInternal * precision;
     } else if (order == QUDA_MILC_SITE_GAUGE_ORDER) {
       bytes = volume * site_size;
-    }
+    } //FIXME: Add OpenQCD section?
 
     if (order == QUDA_QDP_GAUGE_ORDER) {
       gauge = (void**) safe_malloc(siteDim * sizeof(void*));
@@ -58,7 +58,8 @@ namespace quda {
     
     } else if (order == QUDA_CPS_WILSON_GAUGE_ORDER || order == QUDA_MILC_GAUGE_ORDER  ||
 	       order == QUDA_BQCD_GAUGE_ORDER || order == QUDA_TIFR_GAUGE_ORDER ||
-	       order == QUDA_TIFR_PADDED_GAUGE_ORDER || order == QUDA_MILC_SITE_GAUGE_ORDER) {
+	       order == QUDA_TIFR_PADDED_GAUGE_ORDER || order == QUDA_MILC_SITE_GAUGE_ORDER || 
+         order == QUDA_OPENQCD_GAUGE_ORDER) { //FIXME: Why are there 2 milc related options?
 
       if (order == QUDA_MILC_SITE_GAUGE_ORDER && create != QUDA_REFERENCE_FIELD_CREATE) {
 	errorQuda("MILC site gauge order only supported for reference fields");
@@ -394,7 +395,8 @@ namespace quda {
       for (int d = 0; d < 4; d++) { std::memcpy(&dst_buffer[d * dbytes], p[d], dbytes); }
     } else if (Order() == QUDA_CPS_WILSON_GAUGE_ORDER || Order() == QUDA_MILC_GAUGE_ORDER
                || Order() == QUDA_MILC_SITE_GAUGE_ORDER || Order() == QUDA_BQCD_GAUGE_ORDER
-               || Order() == QUDA_TIFR_GAUGE_ORDER || Order() == QUDA_TIFR_PADDED_GAUGE_ORDER) {
+               || Order() == QUDA_TIFR_GAUGE_ORDER || Order() == QUDA_TIFR_PADDED_GAUGE_ORDER
+               || Order() == QUDA_OPENQCD_GAUGE_ORDER) {
       const void *p = Gauge_p();
       int bytes = Bytes();
       std::memcpy(buffer, p, bytes);
@@ -414,7 +416,8 @@ namespace quda {
       for (int d = 0; d < 4; d++) { std::memcpy(p[d], &dst_buffer[d * dbytes], dbytes); }
     } else if (Order() == QUDA_CPS_WILSON_GAUGE_ORDER || Order() == QUDA_MILC_GAUGE_ORDER
                || Order() == QUDA_MILC_SITE_GAUGE_ORDER || Order() == QUDA_BQCD_GAUGE_ORDER
-               || Order() == QUDA_TIFR_GAUGE_ORDER || Order() == QUDA_TIFR_PADDED_GAUGE_ORDER) {
+               || Order() == QUDA_TIFR_GAUGE_ORDER || Order() == QUDA_TIFR_PADDED_GAUGE_ORDER
+               || Order() == QUDA_OPENQCD_GAUGE_ORDER) {
       void *p = Gauge_p();
       size_t bytes = Bytes();
       std::memcpy(p, buffer, bytes);

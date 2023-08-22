@@ -1653,56 +1653,189 @@ namespace quda {
         if (volumeCB != stride) errorQuda("Stride must equal volume for this field order");
       }
 
-  __device__ __host__ inline void load(complex v[Ns * Nc], int x, int parity = 0) const
-  {
-    for (int s=0; s<Ns; s++) {
-      for (int c=0; c<Nc; c++) {
-        v[s * Nc + c] = complex(field[(((0 * Nc + c) * Ns + s) * 2 + (1 - parity)) * volumeCB + x],
-                                field[(((1 * Nc + c) * Ns + s) * 2 + (1 - parity)) * volumeCB + x]);
+      __device__ __host__ inline void load(complex v[Ns * Nc], int x, int parity = 0) const
+      {
+        for (int s=0; s<Ns; s++) {
+          for (int c=0; c<Nc; c++) {
+            v[s * Nc + c] = complex(field[(((0 * Nc + c) * Ns + s) * 2 + (1 - parity)) * volumeCB + x],
+                                    field[(((1 * Nc + c) * Ns + s) * 2 + (1 - parity)) * volumeCB + x]);
+          }
+        }
       }
-    }
-  }
 
-  __device__ __host__ inline void save(const complex v[Ns * Nc], int x, int parity = 0)
-  {
-    for (int s=0; s<Ns; s++) {
-      for (int c=0; c<Nc; c++) {
-        field[(((0 * Nc + c) * Ns + s) * 2 + (1 - parity)) * volumeCB + x] = v[s * Nc + c].real();
-        field[(((1 * Nc + c) * Ns + s) * 2 + (1 - parity)) * volumeCB + x] = v[s * Nc + c].imag();
+      __device__ __host__ inline void save(const complex v[Ns * Nc], int x, int parity = 0)
+      {
+        for (int s=0; s<Ns; s++) {
+          for (int c=0; c<Nc; c++) {
+            field[(((0 * Nc + c) * Ns + s) * 2 + (1 - parity)) * volumeCB + x] = v[s * Nc + c].real();
+            field[(((1 * Nc + c) * Ns + s) * 2 + (1 - parity)) * volumeCB + x] = v[s * Nc + c].imag();
+          }
+        }
       }
-    }
-  }
 
-  /**
-     @brief This accessor routine returns a colorspinor_wrapper to this object,
-     allowing us to overload various operators for manipulating at
-     the site level interms of matrix operations.
-     @param[in] x_cb Checkerboarded space-time index we are requesting
-     @param[in] parity Parity we are requesting
-     @return Instance of a colorspinor_wrapper that curries in access to
-     this field at the above coordinates.
-  */
-  __device__ __host__ inline colorspinor_wrapper<real, Accessor> operator()(int x_cb, int parity)
-  {
-    return colorspinor_wrapper<real, Accessor>(*this, x_cb, parity);
-  }
+      /**
+         @brief This accessor routine returns a colorspinor_wrapper to this object,
+        allowing us to overload various operators for manipulating at
+        the site level interms of matrix operations.
+        @param[in] x_cb Checkerboarded space-time index we are requesting
+        @param[in] parity Parity we are requesting
+        @return Instance of a colorspinor_wrapper that curries in access to
+        this field at the above coordinates.
+      */
+      __device__ __host__ inline colorspinor_wrapper<real, Accessor> operator()(int x_cb, int parity)
+      {
+        return colorspinor_wrapper<real, Accessor>(*this, x_cb, parity);
+      }
 
-  /**
-     @brief This accessor routine returns a const colorspinor_wrapper to this object,
-     allowing us to overload various operators for manipulating at
-     the site level interms of matrix operations.
-     @param[in] x_cb Checkerboarded space-time index we are requesting
-     @param[in] parity Parity we are requesting
-     @return Instance of a colorspinor_wrapper that curries in access to
-     this field at the above coordinates.
-  */
-  __device__ __host__ inline const colorspinor_wrapper<real, Accessor> operator()(int x_cb, int parity) const
-  {
-    return colorspinor_wrapper<real, Accessor>(const_cast<Accessor &>(*this), x_cb, parity);
-  }
+      /**
+         @brief This accessor routine returns a const colorspinor_wrapper to this object,
+        allowing us to overload various operators for manipulating at
+        the site level interms of matrix operations.
+        @param[in] x_cb Checkerboarded space-time index we are requesting
+        @param[in] parity Parity we are requesting
+        @return Instance of a colorspinor_wrapper that curries in access to
+        this field at the above coordinates.
+      */
+      __device__ __host__ inline const colorspinor_wrapper<real, Accessor> operator()(int x_cb, int parity) const
+      {
+        return colorspinor_wrapper<real, Accessor>(const_cast<Accessor &>(*this), x_cb, parity);
+      }
 
-  size_t Bytes() const { return nParity * volumeCB * Nc * Ns * 2 * sizeof(Float); }
-      };
+      size_t Bytes() const { return nParity * volumeCB * Nc * Ns * 2 * sizeof(Float); }
+    };
+
+    // FIXME: OpenQCD
+    // Based on ''SpaceSpinorColorOrder'' TODO:
+    template <typename Float, int Ns, int Nc> struct OpenQCDDiracOrder {
+      using Accessor = OpenQCDDiracOrder<Float, Ns, Nc>;
+      using real = typename mapper<Float>::type;
+      using complex = complex<real>;
+      static const int length = 2 * Ns * Nc; // 12 complex (2 floats) numbers per spinor color field
+      Float *field;
+      size_t offset;
+      Float *ghost[8];
+      int volumeCB;
+      int faceVolumeCB[4];
+      int nParity;
+      const int dim[4];
+
+      OpenQCDDiracOrder(const ColorSpinorField &a, int nFace = 1, Float *field_ = 0, float * = 0, Float **ghost_ = 0) :
+        field(field_ ? field_ : (Float *)a.V()),
+        offset(a.Bytes() / (2 * sizeof(Float))),  // TODO: What's this for??
+        volumeCB(a.VolumeCB()),
+        nParity(a.SiteSubset()),
+        dim {a.X()[0], a.X()[1], a.X()[2], a.X()[3]} // GLOBAL dimensions??
+      { // TODO: ARE GHOSTS NEEDED??
+        // for (int i = 0; i < 4; i++) {
+        //   ghost[2 * i] = ghost_ ? ghost_[2 * i] : 0;
+        //   ghost[2 * i + 1] = ghost_ ? ghost_[2 * i + 1] : 0;
+        //   faceVolumeCB[i] = a.SurfaceCB(i) * nFace;
+        // }
+        if constexpr (length != 24) errorQuda("Spinor field length %d not supported", length);
+      }
+
+      /**
+       @brief Convert from 1-dimensional index to the n-dimensional
+       spatial index.  With full fields, we assume that the field is
+       even-odd ordered.  The lattice coordinates that are computed
+       here are full-field coordinates.
+      */
+      // __device__ __host__ inline void LatticeIndexOpenQCD(int y[4], int i) const
+      // {
+      //   // if (siteSubset == QUDA_FULL_SITE_SUBSET)
+      //   x[0] /= 2;
+
+      //   for (int d = 0; d < 4; d++) {
+      //     y[d] = i % x[d];
+      //     i /= x[d];
+      //   }
+      //   int parity = i; // parity is the slowest running dimension
+
+      //   // convert into the full-field lattice coordinate
+      //   // if (siteSubset == QUDA_FULL_SITE_SUBSET) {
+      //   for (int d = 1; d < nDim; d++) parity += y[d];
+      //   parity = parity & 1;
+      //   x[0] *= 2; // restore x[0]
+      //   // }
+
+      //   y[0] = 2 * y[0] + parity; // compute the full x coordinate
+      // }
+
+      /* lexicographical index: coord0 in QUDA is x1 in OpenQxD (x)
+              coord1 in QUDA is x2 in OpenQxD (y)
+              coord2 in QUDA is x3 in OpenQxD (z)
+              coord3 in QUDA is x0 in OpenQxD (t)
+              */
+      __device__ __host__ inline void load(complex v[length / 2], int x, int parity = 0) const
+      {
+
+        /* INDEXING */
+        int coord[4]; // declare a 4D vector x0, x1, x2, x3 = (xyzt), t fastest (ix = x0 + x1 * L0 + ...)
+        getCoords(coord, x, dim, parity); // from x, dim, parity obtain coordinate of the site
+
+        int iy_OpenQxD = coord[2] + dim[2] * coord[1] + dim[2] * dim[1] * coord[0] + dim[0] * dim[2] * dim[1] * coord[3];
+
+        // Loading as per QUDA style
+        auto in = &field[iy_OpenQxD * length]; // This is how they're accessed within OpenQxd (length = 24 doubles
+                                               // = 12 complex doubles = 4 spinor x 3 colors)
+                                               //
+        // printf("Loading site iy: %d with field value %.10e \n", iy_OpenQxD, field[iy_OpenQxD * length]);
+        block_load<complex, length / 2>(v, reinterpret_cast<const complex *>(in));
+      }
+
+      __device__ __host__ inline void save(const complex v[length / 2], int x, int parity = 0) const
+      {
+        /* INDEXING */
+        int coord[4]; // declare a 4D vector x0, x1, x2, x3 = (xyzt), t fastest (ix = x0 + x1 * L0 + ...)
+        getCoords(coord, x, dim, parity); // from x, dim, parity obtain coordinate of the site
+
+        int iy_OpenQxD = coord[2] + dim[2] * coord[1] + dim[2] * dim[1] * coord[0] + dim[0] * dim[2] * dim[1] * coord[3];
+
+        // Loading as per QUDA style
+        auto out = &field[iy_OpenQxD * length];
+        // printf("Saving site iy: %d with field value %.10e \n",iy_OpenQxD,field[iy_OpenQxD * length]);
+
+        block_store<complex, length / 2>(reinterpret_cast<complex *>(out), v);
+      }
+
+      /**
+         @brief This accessor routine returns a colorspinor_wrapper to this object,
+         allowing us to overload various operators for manipulating at
+         the site level interms of matrix operations.
+         @param[in] x_cb Checkerboarded space-time index we are requesting
+         @param[in] parity Parity we are requesting
+         @return Instance of a colorspinor_wrapper that curries in access to
+         this field at the above coordinates.
+      */
+      __device__ __host__ inline auto operator()(int x_cb, int parity) const
+      {
+        return colorspinor_wrapper<real, Accessor>(*this, x_cb, parity);
+      }
+
+      // __device__ __host__ inline void loadGhost(complex v[length / 2], int x, int dim, int dir, int parity = 0) const
+      // {
+      //   for (int s = 0; s < Ns; s++) {
+      //     for (int c = 0; c < Nc; c++) {
+      //       v[s * Nc + c]
+      //         = complex(ghost[2 * dim + dir][(((parity * faceVolumeCB[dim] + x) * Ns + s) * Nc + c) * 2 + 0],
+      //                   ghost[2 * dim + dir][(((parity * faceVolumeCB[dim] + x) * Ns + s) * Nc + c) * 2 + 1]);
+      //     }
+      //   }
+      // }
+
+      // __device__ __host__ inline void saveGhost(const complex v[length / 2], int x, int dim, int dir, int parity = 0) const
+      // {
+      //   for (int s = 0; s < Ns; s++) {
+      //     for (int c = 0; c < Nc; c++) {
+      //       ghost[2 * dim + dir][(((parity * faceVolumeCB[dim] + x) * Ns + s) * Nc + c) * 2 + 0] = v[s * Nc + c].real();
+      //       ghost[2 * dim + dir][(((parity * faceVolumeCB[dim] + x) * Ns + s) * Nc + c) * 2 + 1] = v[s * Nc + c].imag();
+      //     }
+      //   }
+      // }
+
+      size_t Bytes() const { return nParity * volumeCB * Nc * Ns * 2 * sizeof(Float); }
+    }; // openQCDDiracOrder
+
 
   } // namespace colorspinor
 
@@ -1802,7 +1935,9 @@ namespace quda {
   template<typename T, int Ns, int Nc> struct colorspinor_order_mapper<T,QUDA_SPACE_COLOR_SPIN_FIELD_ORDER,Ns,Nc> { typedef colorspinor::SpaceColorSpinorOrder<T, Ns, Nc> type; };
   template<typename T, int Ns, int Nc> struct colorspinor_order_mapper<T,QUDA_SPACE_SPIN_COLOR_FIELD_ORDER,Ns,Nc> { typedef colorspinor::SpaceSpinorColorOrder<T, Ns, Nc> type; };
   template<typename T, int Ns, int Nc> struct colorspinor_order_mapper<T,QUDA_FLOAT2_FIELD_ORDER,Ns,Nc> { typedef colorspinor::FloatNOrder<T, Ns, Nc, 2> type; };
-
+  // template <typename T, int Ns, int Nc> struct colorspinor_order_mapper<T, QUDA_OPENQCD_FIELD_ORDER, Ns, Nc> {
+  //   typedef colorspinor::OpenQCDDiracOrder<T, Ns, Nc> type;
+  // }; // TODO: ?
 } // namespace quda
 
 #endif // _COLOR_SPINOR_ORDER_H

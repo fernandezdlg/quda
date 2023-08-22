@@ -78,7 +78,7 @@ set (QUDA_OBJS
   copy_gauge_offset.cu copy_color_spinor_offset.cu copy_clover_offset.cu
   staggered_oprod.cu clover_trace_quda.cu
   hisq_paths_force_quda.cu
-  unitarize_force_quda.cu unitarize_links_quda.cu milc_interface.cpp
+  unitarize_force_quda.cu unitarize_links_quda.cu milc_interface.cpp openqcd_interface.cpp
   extended_color_spinor_utilities.cu
   blas_magma.cu tune.cpp
   inv_mpcg_quda.cpp inv_mpbicgstab_quda.cpp inv_gmresdr_quda.cpp
@@ -414,6 +414,10 @@ endif(QUDA_INTERFACE_BQCD OR QUDA_INTERFACE_ALL)
 if(QUDA_INTERFACE_TIFR OR QUDA_INTERFACE_ALL)
   target_compile_definitions(quda PUBLIC BUILD_TIFR_INTERFACE)
 endif(QUDA_INTERFACE_TIFR OR QUDA_INTERFACE_ALL)
+
+if(QUDA_INTERFACE_OPENQCD OR QUDA_INTERFACE_ALL)
+  target_compile_definitions(quda PUBLIC BUILD_OPENQCD_INTERFACE)
+endif(QUDA_INTERFACE_OPENQCD OR QUDA_INTERFACE_ALL)
 
 if(QUDA_CONTRACT)
   target_compile_definitions(quda PUBLIC GPU_CONTRACT)

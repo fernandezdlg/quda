@@ -135,6 +135,15 @@ namespace quda {
       errorQuda("TIFR interface has not been built\n");
 #endif
 
+    } else if (out.Order() == QUDA_OPENQCD_GAUGE_ORDER) {
+
+#ifdef BUILD_OPENQCD_INTERFACE
+      copyGauge<FloatOut, FloatIn, length, fine_grain()>(OpenQCDOrder<FloatOut, length>(out, Out, outGhost), inOrder,
+                                                         out, in, location, type);
+#else
+      errorQuda("OPENQCD interface has not been built\n");
+#endif
+
     } else {
       errorQuda("Gauge field %d order not supported", out.Order());
     }
@@ -268,6 +277,15 @@ namespace quda {
       errorQuda("TIFR interface has not been built\n");
 #endif
 
+    } else if (in.Order() == QUDA_OPENQCD_GAUGE_ORDER) {
+
+#ifdef BUILD_OPENQCD_INTERFACE
+      copyGauge<FloatOut, FloatIn, length>(OpenQCDOrder<FloatIn, length>(in, In, inGhost), out, in, location, Out,
+                                           outGhost, type);
+#else
+      errorQuda("OPENQCD interface has not been built\n");
+#endif
+
     } else {
       errorQuda("Gauge field order %d not supported", in.Order());
     }
@@ -365,7 +383,7 @@ namespace quda {
 #else
 	    errorQuda("TIFR interface has not been built\n");
 #endif
-	  } else {
+	  } else { //TODO:? Add OpenQCD section?
 	    errorQuda("Gauge field orders %d not supported", in.Order());
 	  }
 	} else if (out.Order() == QUDA_QDP_GAUGE_ORDER) {
@@ -453,7 +471,7 @@ namespace quda {
 	    typedef TIFRPaddedOrder<FloatIn,18> momIn;
 	    CopyGaugeArg<momOut,momIn> arg(momOut(out, Out), momIn(in, In), in);
 	    copyMom<FloatOut,FloatIn,18,momOut,momIn>(arg,out,in,location);
-	  } else {
+	  } else { //TODO: Add OpenQCD section?
 	    errorQuda("Gauge field orders %d not supported", in.Order());
 	  }
 #else

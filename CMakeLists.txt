@@ -177,8 +177,9 @@ option(QUDA_ARPACK_LOGGING "enable ARPACK logging (not availible for NG)" OFF)
 option(QUDA_OPENBLAS "enable OpenBLAS" OFF)
 
 # Interface options
-option(QUDA_INTERFACE_QDP "build qdp interface" ON)
-option(QUDA_INTERFACE_MILC "build milc interface" ON)
+option(QUDA_INTERFACE_QDP "build qdp interface" OFF)
+option(QUDA_INTERFACE_MILC "build milc interface" OFF)
+option(QUDA_INTERFACE_OPENQCD "build OpenQCD interface" ON)
 option(QUDA_INTERFACE_CPS "build cps interface" OFF)
 option(QUDA_INTERFACE_QDPJIT "build qdpjit interface" OFF)
 option(QUDA_INTERFACE_BQCD "build bqcd interface" OFF)
@@ -946,3 +947,15 @@ include(CTest)
 add_subdirectory(lib)
 add_subdirectory(tests)
 add_subdirectory(doc)
+
+# ######################################################################################################################
+# OpenQxD 
+# ######################################################################################################################
+# We might only want to do that if using QUDA_DOWNLOAD_USQCD, but this does not work if not set on the initial run
+# if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  # set(CMAKE_INSTALL_PREFIX
+  #     ${CMAKE_BINARY_DIR}/usqcd
+  #     CACHE PATH "..." FORCE)
+# endif()
+
+# include_directories(/scratch/jfernande/openQxD-devel/include)

@@ -49,6 +49,7 @@ typedef enum QudaGaugeFieldOrder_s {
   QUDA_BQCD_GAUGE_ORDER,        // expect *gauge, mu, even-odd, spacetime+halos, column-row order
   QUDA_TIFR_GAUGE_ORDER,        // expect *gauge, mu, even-odd, spacetime, column-row order
   QUDA_TIFR_PADDED_GAUGE_ORDER, // expect *gauge, mu, parity, t, z+halo, y, x/2, column-row order
+  QUDA_OPENQCD_GAUGE_ORDER, // expect *gauge, spacetime, mu, parity (uplink/downlink), row-column order -- links attached to odd points only
   QUDA_INVALID_GAUGE_ORDER = QUDA_INVALID_ENUM
 } QudaGaugeFieldOrder;
 
@@ -248,6 +249,7 @@ typedef enum QudaDiracFieldOrder_s {
   QUDA_CPS_WILSON_DIRAC_ORDER,  // odd-even, color inside spin
   QUDA_LEX_DIRAC_ORDER,         // lexicographical order, color inside spin
   QUDA_TIFR_PADDED_DIRAC_ORDER, // padded z dimension for TIFR RHMC code
+  QUDA_OPENQCD_DIRAC_ORDER,     // OpenQCD
   QUDA_INVALID_DIRAC_ORDER = QUDA_INVALID_ENUM
 } QudaDiracFieldOrder;
 
@@ -257,7 +259,7 @@ typedef enum QudaCloverFieldOrder_s {
   QUDA_FLOAT4_CLOVER_ORDER = 4, // even-odd float4 ordering
   QUDA_PACKED_CLOVER_ORDER,     // even-odd, QDP packed
   QUDA_QDPJIT_CLOVER_ORDER,     // (diagonal / off-diagonal)-chirality-spacetime
-  QUDA_BQCD_CLOVER_ORDER,       // even-odd, super-diagonal packed and reordered
+  QUDA_BQCD_CLOVER_ORDER,       // even-odd, super-diagonal packed and reordered //TODO: Add OpenQCD Clover field?
   QUDA_INVALID_CLOVER_ORDER = QUDA_INVALID_ENUM
 } QudaCloverFieldOrder;
 
@@ -353,6 +355,7 @@ typedef enum QudaFieldOrder_s {
   QUDA_QDPJIT_FIELD_ORDER,                  // QDP field ordering (complex-color-spin-spacetime)
   QUDA_QOP_DOMAIN_WALL_FIELD_ORDER,         // QOP domain-wall ordering
   QUDA_PADDED_SPACE_SPIN_COLOR_FIELD_ORDER, // TIFR RHMC ordering
+  QUDA_OPENQCD_FIELD_ORDER, // FIXME: OPENQCD geometry ordering (at the moment lexicographical w/ rotation zyxt = x3x2x1x0 |-> xyzt x0x1x2x3 )
   QUDA_INVALID_FIELD_ORDER = QUDA_INVALID_ENUM
 } QudaFieldOrder;
 
