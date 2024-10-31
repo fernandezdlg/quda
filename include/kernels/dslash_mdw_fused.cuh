@@ -199,7 +199,7 @@ namespace quda {
     -> Everything should be understood in a 4d checkboarding sense.
     */
     template <class storage_type, bool dagger, bool halo, bool back, class Vector, class Arg>
-    __device__ inline void apply_wilson_5d(Vector &out, int coordinate[4], Arg &arg, int s)
+    __device__ inline void apply_wilson_5d(Vector &out, int coordinate[4], const Arg &arg, int s)
     {
       typedef typename mapper<storage_type>::type compute_type;
       typedef Matrix<complex<compute_type>, 3> Link;

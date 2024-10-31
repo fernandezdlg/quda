@@ -66,7 +66,7 @@ namespace quda
   // one(spin).
   // x by y
   template <int M_sm, bool dagger, class Arg>
-  __device__ inline void construct_matrix_a_m5inv(Arg &arg, half *sm_a, const float *mp = nullptr,
+  __device__ inline void construct_matrix_a_m5inv(const Arg &arg, half *sm_a, const float *mp = nullptr,
                                                   const float *mm = nullptr)
   {
     constexpr int Ls = Arg::Ls;
@@ -137,7 +137,7 @@ namespace quda
   // one(spin).
   // x by y
   template <int M_sm, bool dagger, class Arg>
-  __device__ inline void construct_matrix_a_d5(Arg &arg, half *sm_a)
+  __device__ inline void construct_matrix_a_d5(const Arg &arg, half *sm_a)
   {
     constexpr int Ls = Arg::Ls;
     // if we rescale, then the actual matrix is alpha*m5inv+beta.
