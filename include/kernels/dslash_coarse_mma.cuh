@@ -154,6 +154,7 @@ namespace quda
     }
   };
 
+#ifdef USE_TENSOR_MEMORY_ACCELERATOR
   __device__ inline void tma_wait(int bytes, barrier_t *bar)
   {
     barrier_t::arrival_token token;
@@ -167,6 +168,7 @@ namespace quda
     // Wait for the data to have arrived. This also serves as a __syncthreads()
     bar->wait(std::move(token));
   }
+#endif
 
   /**
      Applies the coarse dslash on a given parity and checkerboard site index
