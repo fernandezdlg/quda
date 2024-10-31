@@ -8,6 +8,16 @@ namespace quda
   // each entry is one p
   std::vector<std::vector<ColorSpinorField>> chronoResident(QUDA_MAX_CHRONO);
 
+  void flushChrono(int i)
+  {
+    if (i >= QUDA_MAX_CHRONO) errorQuda("Requested chrono index %d is outside of max %d", i, QUDA_MAX_CHRONO);
+
+    if (i >= 0)
+      chronoResident[i].clear();
+    else
+      for (auto i = 0; i < QUDA_MAX_CHRONO; i++) chronoResident[i].clear();
+  }
+
   void massRescale(cvector_ref<ColorSpinorField> &b, QudaInvertParam &param, bool for_multishift)
   {
     double kappa5 = (0.5 / (5.0 + param.m5));
@@ -136,7 +146,7 @@ namespace quda
     // rescale the source and solution vectors to help prevent the onset of underflow
     if (param.solver_normalization == QUDA_SOURCE_NORMALIZATION) {
       auto nb_inv(nb);
-      for (auto bi : nb_inv) bi = 1 / sqrt(bi);
+      for (auto &bi : nb_inv) bi = 1 / sqrt(bi);
       blas::ax(nb_inv, b);
       blas::ax(nb_inv, x);
     }
@@ -289,7 +299,7 @@ namespace quda
 
     if (param.solver_normalization == QUDA_SOURCE_NORMALIZATION) {
       // rescale the solution
-      for (auto bi : nb) bi = sqrt(bi);
+      for (auto &bi : nb) bi = sqrt(bi);
       blas::ax(nb, x);
     }
 

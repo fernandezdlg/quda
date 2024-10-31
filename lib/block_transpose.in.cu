@@ -124,7 +124,7 @@ namespace quda
       if constexpr (sizeof...(N) > 0) {
         launch_span_nVec<v_t, b_t, vFloat, bFloat, nSpin, nColor>(V, B, from_to_non_rel, nVecs_remaining);
       } else {
-        errorQuda("nVec = %d not instantiated\n", V.Nvec());
+        errorQuda("nVec = %d not instantiated", V.Nvec());
       }
     }
   }
