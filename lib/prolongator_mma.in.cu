@@ -4,10 +4,15 @@
 #include <kernels/prolongator_mma.cuh>
 #include <device.hpp>
 #include <expand_list.hpp>
+
+#if QUDA_MMA_AVAILABLE
 #include <mma_tensor_op/smma_m16n8k8_sm70.cuh>
+#endif
 
 namespace quda
 {
+
+#if QUDA_MMA_AVAILABLE
 
   template <typename Float, typename vFloat, int fineSpin, int fineColor, int coarseSpin, int coarseColor, int nVec>
   class ProlongateLaunchMma : public TunableKernel
@@ -205,12 +210,14 @@ namespace quda
   constexpr int coarseColor = @QUDA_MULTIGRID_NVEC2@;
   constexpr int nVec = @QUDA_MULTIGRID_MRHS@;
   // clang-format on
+#endif
 
   template <>
   void ProlongateMma<fineColor, coarseColor, nVec>(ColorSpinorField &out, const ColorSpinorField &in,
                                                    const ColorSpinorField &v, const int *fine_to_coarse,
                                                    const int *const *spin_map, int parity)
   {
+#if QUDA_MMA_AVAILABLE
     if constexpr (is_enabled_multigrid()) {
       QudaPrecision precision = checkPrecision(out, in);
 
@@ -224,6 +231,9 @@ namespace quda
     } else {
       errorQuda("Multigrid has not been built");
     }
+#else
+    errorQuda("ProlongateMma is not instantiated.");
+#endif
   }
 
 } // end namespace quda

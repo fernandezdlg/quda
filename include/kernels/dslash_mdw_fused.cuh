@@ -280,8 +280,8 @@ namespace quda {
       The integer kernel types corresponds to the enum MdwfFusedDslashType.
     */
     template <typename Arg> struct FusedMobiusDslash {
-      Arg &arg;
-      constexpr FusedMobiusDslash(Arg &arg) : arg(arg) {}
+      const Arg &arg;
+      constexpr FusedMobiusDslash(const Arg &arg) : arg(arg) {}
       static constexpr const char *filename() { return KERNEL_FILE; }
 
       __device__ __forceinline__ void operator()()

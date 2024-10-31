@@ -5,10 +5,15 @@
 #include <kernels/restrictor_mma.cuh>
 #include <device.hpp>
 #include <expand_list.hpp>
+
+#ifdef QUDA_MMA_AVAILABLE
 #include <mma_tensor_op/smma_m16n8k8_sm70.cuh>
+#endif
 
 namespace quda
 {
+
+#ifdef QUDA_MMA_AVAILABLE
 
   template <typename out_t, typename in_t, typename v_t, int fineSpin, int fineColor, int coarseSpin, int coarseColor, int nVec>
   class RestrictMmaLaunch : public TunableKernel
@@ -241,12 +246,14 @@ namespace quda
   constexpr int coarseColor = @QUDA_MULTIGRID_NVEC2@;
   constexpr int nVec = @QUDA_MULTIGRID_MRHS@;
   // clang-format on
+#endif
 
   template <>
   void RestrictMma<fineColor, coarseColor, nVec>(ColorSpinorField &out, const ColorSpinorField &in,
                                                  const ColorSpinorField &v, const int *fine_to_coarse,
                                                  const int *coarse_to_fine, const int *const *spin_map, int parity)
   {
+#if QUDA_MMA_AVAILABLE
     if constexpr (is_enabled_multigrid()) {
 
       checkLocation(out, in, v);
@@ -266,6 +273,9 @@ namespace quda
     } else {
       errorQuda("Multigrid has not been built");
     }
+#else
+    errorQuda("RestrictMma is not instantiated.");
+#endif
   }
 
 } // namespace quda
