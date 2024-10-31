@@ -156,12 +156,12 @@ namespace quda
       if (clover) { strcat(aux, ",clover"); }
 
       strcat(aux, ",n_rhs=");
-#ifdef USE_TENSOR_MEMORY_ACCELERATOR
-      strcat(aux, ",use_tma");
-#endif
       char rhs_str[16];
       i32toa(rhs_str, out[0].Nvec());
       strcat(aux, rhs_str);
+#ifdef USE_TENSOR_MEMORY_ACCELERATOR
+      strcat(aux, ",use_tma");
+#endif
 
       apply(device::get_default_stream());
     }

@@ -12,7 +12,9 @@
 #include <mma_tensor_op/gemm.cuh>
 #include <complex_quda.h>
 
+#if (__COMPUTE_CAPABILITY__ >= 900) && (CUDA_VERSION >= 12060)
 #define USE_TENSOR_MEMORY_ACCELERATOR
+#endif
 
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
 #include <tma_helper.hpp>
@@ -79,9 +81,13 @@ namespace quda
     int ghostFaceCB[4];
 
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
+    // For Dslash
     tma_descriptor_t tma_desc_g;
     tma_descriptor_t tma_desc_g_back;
     tma_descriptor_t tma_desc_inA;
+    // For Clover
+    tma_descriptor_t tma_desc_gx;
+    tma_descriptor_t tma_desc_inB;
 #endif
 
     DslashCoarseMmaArg(ColorSpinorField &out, const ColorSpinorField &inA, const ColorSpinorField &inB,
@@ -108,27 +114,59 @@ namespace quda
       for (int i = 0; i < 4; i++) ghostFaceCB[i] = halo.getDslashConstant().ghostFaceCB[i];
 
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
-      tma_descriptor_key_t<5> key_g = {
-        std::array<size_t, 5>{nColor * nSpin * 2, nColor * nSpin, 8, Y.VolumeCB(), static_cast<size_t>(Y.SiteSubset())},
-        std::array<size_t, 5>{bK * 2, bM, 1, 1, 1},
-        Y.data<complex<yFloat> *>()
-      };
-      tma_desc_g = get_tma_descriptor<yFloat, 5>(key_g);
-      tma_descriptor_key_t<5> key_g_back = {
-        std::array<size_t, 5>{nColor * nSpin * 2, nColor * nSpin, 8, Y.VolumeCB(), static_cast<size_t>(Y.SiteSubset())},
-        std::array<size_t, 5>{bM * 2, bK, 1, 1, 1},
-        Y.data<complex<yFloat> *>()
-      };
-      tma_desc_g_back = get_tma_descriptor<yFloat, 5>(key_g_back);
-      tma_descriptor_key_t<4> key_inA = {
-        std::array<size_t, 4>{nVec * 2, nColor * nSpin, inA.VolumeCB(), static_cast<size_t>(nParity)},
-        std::array<size_t, 4>{bN * 2, bK, 1, 1},
-        inA.data<complex<Float> *>()
-      };
-      tma_desc_inA = get_tma_descriptor<Float, 4>(key_inA);
+      // For Dslash
+      if constexpr (dslash) {
+        tma_descriptor_key_t<5> key_g = {std::array<size_t, 5> {nColor * nSpin * 2, nColor * nSpin, 8, Y.VolumeCB(),
+                                                                static_cast<size_t>(Y.SiteSubset())},
+                                         std::array<size_t, 5> {bK * 2, bM, 1, 1, 1}, Y.data<complex<yFloat> *>()};
+        tma_desc_g = get_tma_descriptor<yFloat, 5>(key_g);
+        tma_descriptor_key_t<5> key_g_back = {std::array<size_t, 5> {nColor * nSpin * 2, nColor * nSpin, 8,
+                                                                     Y.VolumeCB(), static_cast<size_t>(Y.SiteSubset())},
+                                              std::array<size_t, 5> {bM * 2, bK, 1, 1, 1}, Y.data<complex<yFloat> *>()};
+        tma_desc_g_back = get_tma_descriptor<yFloat, 5>(key_g_back);
+        tma_descriptor_key_t<4> key_inA
+          = {std::array<size_t, 4> {nVec * 2, nColor * nSpin, inA.VolumeCB(), static_cast<size_t>(nParity)},
+             std::array<size_t, 4> {bN * 2, bK, 1, 1}, inA.data<complex<Float> *>()};
+        tma_desc_inA = get_tma_descriptor<Float, 4>(key_inA);
+      }
+      // For Clover
+      if constexpr (clover) {
+        tma_descriptor_key_t<4> key_inB
+          = {std::array<size_t, 4> {nVec * 2, nColor * nSpin, inA.VolumeCB(), static_cast<size_t>(inB.SiteSubset())},
+             std::array<size_t, 4> {bN * 2, bK, 1, 1}, inB.data<complex<Float> *>()};
+        tma_desc_inB = get_tma_descriptor<Float, 4>(key_inB);
+
+        if constexpr (dagger) {
+          tma_descriptor_key_t<5> key_gx
+            = {std::array<size_t, 5> {nColor * nSpin * 2, nColor * nSpin, static_cast<size_t>(X.Geometry()),
+                                      X.VolumeCB(), static_cast<size_t>(X.SiteSubset())},
+               std::array<size_t, 5> {bM * 2, bK, 1, 1, 1}, X.data<complex<yFloat> *>()};
+          tma_desc_gx = get_tma_descriptor<yFloat, 5>(key_gx);
+        } else {
+          tma_descriptor_key_t<5> key_gx
+            = {std::array<size_t, 5> {nColor * nSpin * 2, nColor * nSpin, static_cast<size_t>(X.Geometry()),
+                                      X.VolumeCB(), static_cast<size_t>(X.SiteSubset())},
+               std::array<size_t, 5> {bK * 2, bM, 1, 1, 1}, X.data<complex<yFloat> *>()};
+          tma_desc_gx = get_tma_descriptor<yFloat, 5>(key_gx);
+        }
+      }
 #endif
     }
   };
+
+  __device__ inline void tma_wait(int bytes, barrier_t *bar)
+  {
+    barrier_t::arrival_token token;
+    if (target::thread_idx().x == 0 && target::thread_idx().y == 0 && target::thread_idx().z == 0) {
+      // Arrive on the barrier and tell how many bytes are expected to come in.
+      token = cuda::device::barrier_arrive_tx(*bar, 1, bytes);
+    } else {
+      // Other threads just arrive.
+      token = bar->arrive();
+    }
+    // Wait for the data to have arrived. This also serves as a __syncthreads()
+    bar->wait(std::move(token));
+  }
 
   /**
      Applies the coarse dslash on a given parity and checkerboard site index
@@ -173,7 +211,8 @@ namespace quda
     using store_a_t = complex<typename Arg::yFloat>;
     using store_b_t = complex<typename Arg::Float>;
     store_a_t *smem_tmp_a = reinterpret_cast<store_a_t *>(smem_obj_b_imag.ptr + Config::smem_ldb * Arg::bK);
-    store_b_t *smem_tmp_b = reinterpret_cast<store_b_t *>(smem_tmp_a + (Arg::bK + mma::get_tmp_pad()) * (Arg::bM + mma::get_tmp_pad()));
+    store_b_t *smem_tmp_b
+      = reinterpret_cast<store_b_t *>(smem_tmp_a + (Arg::bK + mma::get_tmp_pad()) * (Arg::bM + mma::get_tmp_pad()));
 
     typename Config::Accumulator accumulator((threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x);
 
@@ -210,6 +249,9 @@ namespace quda
       backward_idx[d] = linkIndexHop(coord, arg.dim, d, -arg.nFace);
     }
 
+    constexpr int tma_bytes
+      = Arg::bK * 2 * Arg::bM * sizeof(typename Arg::yFloat) + Arg::bN * 2 * Arg::bK * sizeof(typename Arg::Float);
+
     auto dslash_forward_producer = [&](int d, float &scale_inv_a, float &scale_inv_b, int k_offset) {
       const int fwd_idx = forward_idx[d];
 
@@ -244,9 +286,9 @@ namespace quda
         if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
           // Initiate bulk tensor copy: k_offset * 2 for complex
           cde::cp_async_bulk_tensor_5d_global_to_shared(smem_tmp_a, &arg.tma_desc_g.map, k_offset * 2, m_offset,
-              Arg::dagger ? d : d + 4, x_cb, parity, *bar);
+                                                        Arg::dagger ? d : d + 4, x_cb, parity, *bar);
           cde::cp_async_bulk_tensor_4d_global_to_shared(smem_tmp_b, &arg.tma_desc_inA.map, n_offset * 2, k_offset,
-              fwd_idx, their_spinor_parity, *bar);
+                                                        fwd_idx, their_spinor_parity, *bar);
         }
 #else
         constexpr bool a_dagger = false;
@@ -256,7 +298,6 @@ namespace quda
         scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b, pipe);
         pipe.producer_commit();
 #endif
-
       }
     };
 
@@ -276,9 +317,10 @@ namespace quda
 
           pipe.consumer_wait();
           __syncthreads();
-          float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
-          float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(smem_tmp_b_ghost, scale_inv_b, smem_obj_b_real,
-              smem_obj_b_imag);
+          float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
+            smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+          float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
+            smem_tmp_b_ghost, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
           rescale_factor = a_rescale * b_rescale;
           pipe.consumer_release();
           __syncthreads();
@@ -294,23 +336,15 @@ namespace quda
         constexpr bool b_fixed = b_wrapper_t::fixed;
 
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
-        barrier_t::arrival_token token;
-        if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
-          // Arrive on the barrier and tell how many bytes are expected to come in.
-          token = cuda::device::barrier_arrive_tx(*bar, 1,
-              Arg::bK * 2 * Arg::bM * sizeof(typename Arg::yFloat) + Arg::bN * 2 * Arg::bK * sizeof(typename Arg::Float));
-        } else {
-          // Other threads just arrive.
-          token = bar->arrive();
-        }
-        // Wait for the data to have arrived.
-        bar->wait(std::move(token));
+        tma_wait(tma_bytes, bar);
 #else
         pipe.consumer_wait();
         __syncthreads();
 #endif
-        float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
-        float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(smem_tmp_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
+        float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
+          smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+        float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
+          smem_tmp_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
         rescale_factor = a_rescale * b_rescale;
 #ifndef USE_TENSOR_MEMORY_ACCELERATOR
         pipe.consumer_release();
@@ -364,9 +398,9 @@ namespace quda
         if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
           // Initiate bulk tensor copy: k_offset * 2 for complex
           cde::cp_async_bulk_tensor_5d_global_to_shared(smem_tmp_a, &arg.tma_desc_g_back.map, m_offset * 2, k_offset,
-              Arg::dagger ? d + 4 : d, gauge_idx, 1 - parity, *bar);
+                                                        Arg::dagger ? d + 4 : d, gauge_idx, 1 - parity, *bar);
           cde::cp_async_bulk_tensor_4d_global_to_shared(smem_tmp_b, &arg.tma_desc_inA.map, n_offset * 2, k_offset,
-              back_idx, their_spinor_parity, *bar);
+                                                        back_idx, their_spinor_parity, *bar);
         }
 #else
         constexpr bool a_dagger = true;
@@ -395,9 +429,10 @@ namespace quda
 
           pipe.consumer_wait();
           __syncthreads();
-          float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
-          float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(smem_tmp_b_ghost, scale_inv_b, smem_obj_b_real,
-              smem_obj_b_imag);
+          float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
+            smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+          float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
+            smem_tmp_b_ghost, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
           rescale_factor = a_rescale * b_rescale;
           pipe.consumer_release();
           __syncthreads();
@@ -412,24 +447,15 @@ namespace quda
         constexpr bool b_fixed = b_wrapper_t::fixed;
 
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
-        barrier_t::arrival_token token;
-        if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
-          // Arrive on the barrier and tell how many bytes are expected to come in.
-          token = cuda::device::barrier_arrive_tx(*bar, 1,
-              Arg::bK * 2 * Arg::bM * sizeof(typename Arg::yFloat) + Arg::bN * 2 * Arg::bK * sizeof(typename Arg::Float));
-        } else {
-          // Other threads just arrive.
-          token = bar->arrive();
-        }
-        // Wait for the data to have arrived.
-        bar->wait(std::move(token));
-        // __syncthreads();
+        tma_wait(tma_bytes, bar);
 #else
         pipe.consumer_wait();
         __syncthreads();
 #endif
-        float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
-        float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(smem_tmp_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
+        float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
+          smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+        float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
+          smem_tmp_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
         rescale_factor = a_rescale * b_rescale;
 #ifndef USE_TENSOR_MEMORY_ACCELERATOR
         pipe.consumer_release();
@@ -439,110 +465,134 @@ namespace quda
       return rescale_factor;
     };
 
-      auto dslash_backward_compute = [&](int d, float rescale_factor) {
-        if (backward_exterior[d] && doHalo<Arg::type>() || doBulk<Arg::type>()) {
-          if constexpr (do_rescale) {
-            accumulator.mma_rescale(smem_obj_a_real, smem_obj_a_imag, smem_obj_b_real, smem_obj_b_imag, rescale_factor);
-          } else {
-            accumulator.mma(smem_obj_a_real, smem_obj_a_imag, smem_obj_b_real, smem_obj_b_imag);
-          }
-        }
-      };
-
-      auto clover_producer = [&](float &scale_inv_a, float &scale_inv_b, int k_offset) {
-        const int spinor_parity = (arg.nParity == 2) ? parity : 0;
-
-        auto a = arg.X(0, parity, x_cb, 0, 0);
-        auto b = arg.inB(spinor_parity, x_cb, 0, 0);
-        constexpr bool a_dagger = Arg::dagger;
-        constexpr bool b_dagger = false;
-
-        __syncthreads();
-        pipe.producer_acquire();
-        scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, pipe);
-        scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b, pipe);
-        pipe.producer_commit();
-      };
-
-      auto clover_consumer = [&](float scale_inv_a, float scale_inv_b) -> float {
-        constexpr bool a_dagger = Arg::dagger;
-        constexpr bool b_dagger = false;
-
-        using a_wrapper_t = decltype(arg.X(0, 0, 0, 0, 0));
-        using b_wrapper_t = decltype(arg.inB(0, 0, 0, 0));
-        constexpr bool a_fixed = a_wrapper_t::fixed;
-        constexpr bool b_fixed = b_wrapper_t::fixed;
-
-        pipe.consumer_wait();
-        __syncthreads();
-        float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
-        float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(smem_tmp_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
-        pipe.consumer_release();
-        __syncthreads();
-        return a_rescale * b_rescale;
-      };
-
-      auto clover_compute
-        = [&](float rescale_factor) {
+    auto dslash_backward_compute = [&](int d, float rescale_factor) {
+      if (backward_exterior[d] && doHalo<Arg::type>() || doBulk<Arg::type>()) {
         if constexpr (do_rescale) {
           accumulator.mma_rescale(smem_obj_a_real, smem_obj_a_imag, smem_obj_b_real, smem_obj_b_imag, rescale_factor);
         } else {
           accumulator.mma(smem_obj_a_real, smem_obj_a_imag, smem_obj_b_real, smem_obj_b_imag);
         }
-      };
+      }
+    };
 
-      float scale_inv_a;
-      float scale_inv_b;
+    auto clover_producer = [&](float &scale_inv_a, float &scale_inv_b, int k_offset) {
+      const int spinor_parity = (arg.nParity == 2) ? parity : 0;
 
-      if constexpr (Arg::dslash) {
-
-        dslash_forward_producer(0, scale_inv_a, scale_inv_b, 0);
-
-        for (int k_offset = 0; k_offset < K; k_offset += Arg::bK) {
-
-          // Forward gather - compute fwd offset for spinor fetch
-#pragma unroll
-          for (int d = 0; d < Arg::nDim; d++) // loop over dimension
-          {
-            float rescale_factor = dslash_forward_consumer(d, scale_inv_a, scale_inv_b);
-            if (d < 3) {
-              dslash_forward_producer(d + 1, scale_inv_a, scale_inv_b, k_offset);
-            } else {
-              dslash_backward_producer(0, scale_inv_a, scale_inv_b, k_offset);
-            }
-            dslash_forward_compute(d, rescale_factor);
-          } // nDim
-
-          // Backward gather - compute back offset for spinor and gauge fetch
-#pragma unroll
-          for (int d = 0; d < Arg::nDim; d++) {
-            float rescale_factor = dslash_backward_consumer(d, scale_inv_a, scale_inv_b);
-            if (d < 3) {
-              dslash_backward_producer(d + 1, scale_inv_a, scale_inv_b, k_offset);
-            } else if (k_offset + Arg::bK < K) {
-              dslash_forward_producer(0, scale_inv_a, scale_inv_b, k_offset + Arg::bK);
-            } else if constexpr (doBulk<Arg::type>() && Arg::clover) {
-              clover_producer(scale_inv_a, scale_inv_b, 0);
-            }
-            dslash_backward_compute(d, rescale_factor);
-          } // nDim
+      auto a = arg.X(0, parity, x_cb, 0, 0);
+      auto b = arg.inB(spinor_parity, x_cb, 0, 0);
+#ifdef USE_TENSOR_MEMORY_ACCELERATOR
+      scale_inv_a = a.get_scale_inv();
+      scale_inv_b = b.get_scale_inv();
+      if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
+        // Initiate bulk tensor copy: k_offset * 2 for complex
+        if constexpr (Arg::dagger) {
+          cde::cp_async_bulk_tensor_5d_global_to_shared(smem_tmp_a, &arg.tma_desc_gx.map, m_offset * 2, k_offset, 0,
+                                                        x_cb, parity, *bar);
+        } else {
+          cde::cp_async_bulk_tensor_5d_global_to_shared(smem_tmp_a, &arg.tma_desc_gx.map, k_offset * 2, m_offset, 0,
+                                                        x_cb, parity, *bar);
         }
+        cde::cp_async_bulk_tensor_4d_global_to_shared(smem_tmp_b, &arg.tma_desc_inB.map, n_offset * 2, k_offset, x_cb,
+                                                      spinor_parity, *bar);
+      }
+#else
+      constexpr bool a_dagger = Arg::dagger;
+      constexpr bool b_dagger = false;
 
-        accumulator.ax(-arg.kappa);
+      __syncthreads();
+      pipe.producer_acquire();
+      scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, pipe);
+      scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b, pipe);
+      pipe.producer_commit();
+#endif
+    };
+
+    auto clover_consumer = [&](float scale_inv_a, float scale_inv_b) -> float {
+      constexpr bool a_dagger = Arg::dagger;
+      constexpr bool b_dagger = false;
+
+      using a_wrapper_t = decltype(arg.X(0, 0, 0, 0, 0));
+      using b_wrapper_t = decltype(arg.inB(0, 0, 0, 0));
+      constexpr bool a_fixed = a_wrapper_t::fixed;
+      constexpr bool b_fixed = b_wrapper_t::fixed;
+
+#ifdef USE_TENSOR_MEMORY_ACCELERATOR
+      tma_wait(tma_bytes, bar);
+#else
+      pipe.consumer_wait();
+      __syncthreads();
+#endif
+      float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
+        smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+      float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
+        smem_tmp_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
+#ifndef USE_TENSOR_MEMORY_ACCELERATOR
+      pipe.consumer_release();
+#endif
+      __syncthreads();
+      return a_rescale * b_rescale;
+    };
+
+    auto clover_compute = [&](float rescale_factor) {
+      if constexpr (do_rescale) {
+        accumulator.mma_rescale(smem_obj_a_real, smem_obj_a_imag, smem_obj_b_real, smem_obj_b_imag, rescale_factor);
+      } else {
+        accumulator.mma(smem_obj_a_real, smem_obj_a_imag, smem_obj_b_real, smem_obj_b_imag);
+      }
+    };
+
+    float scale_inv_a;
+    float scale_inv_b;
+
+    if constexpr (Arg::dslash) {
+
+      dslash_forward_producer(0, scale_inv_a, scale_inv_b, 0);
+
+      for (int k_offset = 0; k_offset < K; k_offset += Arg::bK) {
+
+        // Forward gather - compute fwd offset for spinor fetch
+#pragma unroll
+        for (int d = 0; d < Arg::nDim; d++) // loop over dimension
+        {
+          float rescale_factor = dslash_forward_consumer(d, scale_inv_a, scale_inv_b);
+          if (d < 3) {
+            dslash_forward_producer(d + 1, scale_inv_a, scale_inv_b, k_offset);
+          } else {
+            dslash_backward_producer(0, scale_inv_a, scale_inv_b, k_offset);
+          }
+          dslash_forward_compute(d, rescale_factor);
+        } // nDim
+
+        // Backward gather - compute back offset for spinor and gauge fetch
+#pragma unroll
+        for (int d = 0; d < Arg::nDim; d++) {
+          float rescale_factor = dslash_backward_consumer(d, scale_inv_a, scale_inv_b);
+          if (d < 3) {
+            dslash_backward_producer(d + 1, scale_inv_a, scale_inv_b, k_offset);
+          } else if (k_offset + Arg::bK < K) {
+            dslash_forward_producer(0, scale_inv_a, scale_inv_b, k_offset + Arg::bK);
+          } else if constexpr (doBulk<Arg::type>() && Arg::clover) {
+            clover_producer(scale_inv_a, scale_inv_b, 0);
+          }
+          dslash_backward_compute(d, rescale_factor);
+        } // nDim
       }
 
-      /**
-         Applies the coarse clover matrix on a given parity and
-         checkerboard site index
-       */
-      if constexpr (doBulk<Arg::type>() && Arg::clover) {
-        if constexpr (!Arg::dslash) { clover_producer(scale_inv_a, scale_inv_b, 0); }
-        for (int k_offset = 0; k_offset < K; k_offset += Arg::bK) {
-          float rescale_factor = clover_consumer(scale_inv_a, scale_inv_b);
-          if (k_offset + Arg::bK < K) { clover_producer(scale_inv_a, scale_inv_b, k_offset + Arg::bK); }
-          clover_compute(rescale_factor);
-        }
+      accumulator.ax(-arg.kappa);
+    }
+
+    /**
+       Applies the coarse clover matrix on a given parity and
+       checkerboard site index
+     */
+    if constexpr (doBulk<Arg::type>() && Arg::clover) {
+      if constexpr (!Arg::dslash) { clover_producer(scale_inv_a, scale_inv_b, 0); }
+      for (int k_offset = 0; k_offset < K; k_offset += Arg::bK) {
+        float rescale_factor = clover_consumer(scale_inv_a, scale_inv_b);
+        if (k_offset + Arg::bK < K) { clover_producer(scale_inv_a, scale_inv_b, k_offset + Arg::bK); }
+        clover_compute(rescale_factor);
       }
+    }
 
     return accumulator;
   }
