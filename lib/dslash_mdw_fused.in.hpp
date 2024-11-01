@@ -41,6 +41,7 @@ namespace quda
       }
     }
 
+#warning "The value of MY_MACRO is " defined(GPU_DOMAIN_WALL_DIRAC) " and " defined(QUDA_MMA_AVAILABLE)
 #if defined(GPU_DOMAIN_WALL_DIRAC) && defined(QUDA_MMA_AVAILABLE)
     void inline apply_fused_dslash(ColorSpinorField &out, const ColorSpinorField &in, const GaugeField &U,
                                    ColorSpinorField &y, const ColorSpinorField &x, double m_f, double m_5,

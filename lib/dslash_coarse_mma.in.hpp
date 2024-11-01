@@ -50,6 +50,8 @@ namespace quda
     using mma_t = hmma::hmma_tfloat32_t<4, 1, 1>;
 #else
     using mma_t = mma::hmma_t;
+    // using mma_t = typename mma::smma_dispatch<yFloat>::type;
+    // using mma_t = simt::simt_t<float, 8, 4, 2, 2>;
 #endif
     static constexpr int n_atom_size = mma_t::MMA_N;
     static constexpr int m_atom_size = mma_t::MMA_M;

@@ -195,10 +195,10 @@ set(QUDA_MULTIGRID_MRHS_LIST ${QUDA_MULTIGRID_MRHS_DEFAULT_LIST} CACHE STRING "T
 mark_as_advanced(QUDA_MULTIGRID_MRHS_LIST)
 message(STATUS "QUDA_MULTIGRID_MRHS_LIST=${QUDA_MULTIGRID_MRHS_LIST}")
 
-if(QUDA_MULTIGRID)
-  option(QUDA_ENABLE_MMA "Enabling using tensor core" ON)
-  mark_as_advanced(QUDA_ENABLE_MMA)
+option(QUDA_ENABLE_MMA "Enabling using tensor core" ON)
+mark_as_advanced(QUDA_ENABLE_MMA)
 
+if(QUDA_MULTIGRID)
   option(QUDA_MULTIGRID_SETUP_USE_SMMA "Enabling using SMMA (3xTF32/3xBF16/3xFP16) for multigrid setup" ON)
   mark_as_advanced(QUDA_MULTIGRID_SETUP_USE_SMMA)
 

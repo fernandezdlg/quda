@@ -311,22 +311,22 @@ namespace quda {
 
         if (Arg::type == MdwfFusedDslashType::D4_D5INV_D5PRE) {
           if (arg.small_kappa) {
-            construct_matrix_a_d5<M_sm, false, Arg>(arg, sm_a); // dagger = false
+            construct_matrix_a_d5<M_sm, false, Arg>(arg, sm_a, arg.alpha, arg.beta); // dagger = false
           } else {
-            construct_matrix_a_m5inv<M_sm, false, Arg>(arg, sm_a); // dagger = false
+            construct_matrix_a_m5inv<M_sm, false, Arg>(arg, sm_a, arg.alpha, arg.beta); // dagger = false
           }
         } else if (Arg::type == MdwfFusedDslashType::D4DAG_D5PREDAG_D5INVDAG) {
           if (arg.small_kappa) {
-            construct_matrix_a_d5<M_sm, true, Arg>(arg, sm_a); // dagger =  true
+            construct_matrix_a_d5<M_sm, true, Arg>(arg, sm_a, arg.alpha, arg.beta); // dagger =  true
           } else {
-            construct_matrix_a_m5inv<M_sm, true, Arg>(arg, sm_a); // dagger = false
+            construct_matrix_a_m5inv<M_sm, true, Arg>(arg, sm_a, arg.alpha, arg.beta); // dagger = false
           }
         } else if (Arg::type == MdwfFusedDslashType::D4_D5INV_D5INVDAG) {
-          construct_matrix_a_m5inv<M_sm, false, Arg>(arg, sm_a); // dagger = false
+          construct_matrix_a_m5inv<M_sm, false, Arg>(arg, sm_a, arg.alpha, arg.beta); // dagger = false
         } else if (Arg::type == MdwfFusedDslashType::D4DAG_D5PREDAG) {
-          construct_matrix_a_d5<M_sm, true, Arg>(arg, sm_a); // dagger =  true
+          construct_matrix_a_d5<M_sm, true, Arg>(arg, sm_a, arg.alpha, arg.beta); // dagger =  true
         } else if (Arg::type == MdwfFusedDslashType::D5PRE) {
-          construct_matrix_a_d5<M_sm, false, Arg>(arg, sm_a); // dagger =  true
+          construct_matrix_a_d5<M_sm, false, Arg>(arg, sm_a, arg.alpha, arg.beta); // dagger =  true
         }
         __syncthreads();
 
@@ -355,9 +355,8 @@ namespace quda {
         }
 
         if (Arg::type == MdwfFusedDslashType::D4_D5INV_D5INVDAG) {
-          arg.alpha = 1.;
           if (!Arg::reload) {                                                           // in the preload case we preload ...
-            construct_matrix_a_m5inv<M_sm, true, Arg>(arg, sm_a); // dagger = true
+            construct_matrix_a_m5inv<M_sm, true, Arg>(arg, sm_a, 1.0, arg.beta); // dagger = true
             __syncthreads();
 
 #pragma unroll
@@ -366,7 +365,7 @@ namespace quda {
             }
 
           } else {
-            construct_matrix_a_m5inv<M_sm, true, Arg>(arg, sm_a_black); // dagger = true
+            construct_matrix_a_m5inv<M_sm, true, Arg>(arg, sm_a_black, 1.0, arg.beta); // dagger = true
             __syncthreads();
           }
         }

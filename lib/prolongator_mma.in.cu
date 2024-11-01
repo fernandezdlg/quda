@@ -1,10 +1,10 @@
 #include <color_spinor_field.h>
 #include <multigrid.h>
 #include <tunable_nd.h>
-#include <device.hpp>
 #include <expand_list.hpp>
 
 #ifdef QUDA_MMA_AVAILABLE
+#include <device.hpp>
 #include <kernels/prolongator_mma.cuh>
 #include <mma_tensor_op/smma_m16n8k8_sm70.cuh>
 #endif
@@ -204,13 +204,13 @@ namespace quda
       errorQuda("Unexpected spin %d and color %d combination", out.Nspin(), out.Ncolor());
     }
   }
+#endif
 
   // clang-format off
   constexpr int fineColor = @QUDA_MULTIGRID_NC_NVEC@;
   constexpr int coarseColor = @QUDA_MULTIGRID_NVEC2@;
   constexpr int nVec = @QUDA_MULTIGRID_MRHS@;
   // clang-format on
-#endif
 
   template <>
   void ProlongateMma<fineColor, coarseColor, nVec>(ColorSpinorField &out, const ColorSpinorField &in,
