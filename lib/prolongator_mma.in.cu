@@ -212,12 +212,12 @@ namespace quda
   constexpr int nVec = @QUDA_MULTIGRID_MRHS@;
   // clang-format on
 
+#ifdef QUDA_MMA_AVAILABLE
   template <>
   void ProlongateMma<fineColor, coarseColor, nVec>(ColorSpinorField &out, const ColorSpinorField &in,
                                                    const ColorSpinorField &v, const int *fine_to_coarse,
                                                    const int *const *spin_map, int parity)
   {
-#ifdef QUDA_MMA_AVAILABLE
     if constexpr (is_enabled_multigrid()) {
       QudaPrecision precision = checkPrecision(out, in);
 
@@ -231,9 +231,14 @@ namespace quda
     } else {
       errorQuda("Multigrid has not been built");
     }
-#else
-    errorQuda("ProlongateMma is not instantiated.");
-#endif
   }
+#else
+  template <>
+  void ProlongateMma<fineColor, coarseColor, nVec>(ColorSpinorField &, const ColorSpinorField &,
+                                                   const ColorSpinorField &, const int *, const int *const *, int)
+  {
+    errorQuda("ProlongateMma is not instantiated.");
+  }
+#endif
 
 } // end namespace quda
