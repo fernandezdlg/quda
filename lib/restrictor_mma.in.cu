@@ -214,25 +214,25 @@ namespace quda
           }
         }
       } else if (in.Nspin() == 1) {
-#if 0
         if constexpr (is_enabled_spin(1)) {
           if (in.Precision() == out.Precision()) {
             RestrictMma<store_t, store_t, 1, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map,
                                                                   parity);
           } else if (in.Precision() == QUDA_HALF_PRECISION) {
+#if 0
             if constexpr (is_enabled(QUDA_HALF_PRECISION)) {
               RestrictMma<store_t, short, 1, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map,
                                                                   parity);
             } else {
-              errorQuda("QUDA_PRECISION=%d does not enable half precision", QUDA_PRECISION);
+#endif
+            errorQuda("QUDA_PRECISION=%d does not enable half precision", QUDA_PRECISION);
+#if 0
             }
+#endif
           } else {
             errorQuda("Unsupported precision %d", in.Precision());
           }
         }
-#else
-        errorQuda("Unexpected nSpin = %d", in.Nspin());
-#endif
       } else {
         errorQuda("Unexpected nSpin = %d", in.Nspin());
       }
