@@ -18,8 +18,6 @@
 
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
 #include <tma_helper.hpp>
-using barrier_t = cuda::barrier<cuda::thread_scope_block>;
-namespace cde = cuda::device::experimental;
 #endif
 
 namespace quda
@@ -116,38 +114,31 @@ namespace quda
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
       // For Dslash
       if constexpr (dslash) {
-        tma_descriptor_key_t<5> key_g = {std::array<size_t, 5> {nColor * nSpin * 2, nColor * nSpin, 8, Y.VolumeCB(),
-                                                                static_cast<size_t>(Y.SiteSubset())},
-                                         std::array<size_t, 5> {bK * 2, bM, 1, 1, 1}, Y.data<complex<yFloat> *>()};
-        tma_desc_g = get_tma_descriptor<yFloat, 5>(key_g);
-        tma_descriptor_key_t<5> key_g_back = {std::array<size_t, 5> {nColor * nSpin * 2, nColor * nSpin, 8,
-                                                                     Y.VolumeCB(), static_cast<size_t>(Y.SiteSubset())},
-                                              std::array<size_t, 5> {bM * 2, bK, 1, 1, 1}, Y.data<complex<yFloat> *>()};
-        tma_desc_g_back = get_tma_descriptor<yFloat, 5>(key_g_back);
-        tma_descriptor_key_t<4> key_inA
-          = {std::array<size_t, 4> {nVec * 2, nColor * nSpin, inA.VolumeCB(), static_cast<size_t>(nParity)},
-             std::array<size_t, 4> {bN * 2, bK, 1, 1}, inA.data<complex<Float> *>()};
-        tma_desc_inA = get_tma_descriptor<Float, 4>(key_inA);
+        {
+          std::array<size_t, 5> tensor_size
+            = {nColor * nSpin * 2, nColor * nSpin, 8, Y.VolumeCB(), static_cast<size_t>(Y.SiteSubset())};
+          tma_desc_g = get_tma_descriptor_5d_box_2d<bK * 2, bM>(tensor_size, Y.data<complex<yFloat> *>());
+          tma_desc_g_back = get_tma_descriptor_5d_box_2d<bM * 2, bK>(tensor_size, Y.data<complex<yFloat> *>());
+        }
+        {
+          std::array<size_t, 4> tensor_size = {nVec * 2, nColor * nSpin, inA.VolumeCB(), static_cast<size_t>(nParity)};
+          tma_desc_inA = get_tma_descriptor_4d_box_2d<bN * 2, bK>(tensor_size, inA.data<complex<Float> *>());
+        }
       }
       // For Clover
       if constexpr (clover) {
-        tma_descriptor_key_t<4> key_inB
-          = {std::array<size_t, 4> {nVec * 2, nColor * nSpin, inA.VolumeCB(), static_cast<size_t>(inB.SiteSubset())},
-             std::array<size_t, 4> {bN * 2, bK, 1, 1}, inB.data<complex<Float> *>()};
-        tma_desc_inB = get_tma_descriptor<Float, 4>(key_inB);
+        {
+          std::array<size_t, 4> tensor_size
+            = {nVec * 2, nColor * nSpin, inA.VolumeCB(), static_cast<size_t>(inB.SiteSubset())};
+          tma_desc_inB = get_tma_descriptor_4d_box_2d<bN * 2, bK>(tensor_size, inB.data<complex<Float> *>());
+        }
 
+        std::array<size_t, 5> tensor_size = {nColor * nSpin * 2, nColor * nSpin, static_cast<size_t>(X.Geometry()),
+                                             X.VolumeCB(), static_cast<size_t>(X.SiteSubset())};
         if constexpr (dagger) {
-          tma_descriptor_key_t<5> key_gx
-            = {std::array<size_t, 5> {nColor * nSpin * 2, nColor * nSpin, static_cast<size_t>(X.Geometry()),
-                                      X.VolumeCB(), static_cast<size_t>(X.SiteSubset())},
-               std::array<size_t, 5> {bM * 2, bK, 1, 1, 1}, X.data<complex<yFloat> *>()};
-          tma_desc_gx = get_tma_descriptor<yFloat, 5>(key_gx);
+          tma_desc_gx = get_tma_descriptor_5d_box_2d<bM * 2, bK>(tensor_size, X.data<complex<yFloat> *>());
         } else {
-          tma_descriptor_key_t<5> key_gx
-            = {std::array<size_t, 5> {nColor * nSpin * 2, nColor * nSpin, static_cast<size_t>(X.Geometry()),
-                                      X.VolumeCB(), static_cast<size_t>(X.SiteSubset())},
-               std::array<size_t, 5> {bK * 2, bM, 1, 1, 1}, X.data<complex<yFloat> *>()};
-          tma_desc_gx = get_tma_descriptor<yFloat, 5>(key_gx);
+          tma_desc_gx = get_tma_descriptor_5d_box_2d<bK * 2, bM>(tensor_size, X.data<complex<yFloat> *>());
         }
       }
 #endif
@@ -287,10 +278,10 @@ namespace quda
         scale_inv_b = b.get_scale_inv();
         if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
           // Initiate bulk tensor copy: k_offset * 2 for complex
-          cde::cp_async_bulk_tensor_5d_global_to_shared(smem_tmp_a, &arg.tma_desc_g.map, k_offset * 2, m_offset,
-                                                        Arg::dagger ? d : d + 4, x_cb, parity, *bar);
-          cde::cp_async_bulk_tensor_4d_global_to_shared(smem_tmp_b, &arg.tma_desc_inA.map, n_offset * 2, k_offset,
-                                                        fwd_idx, their_spinor_parity, *bar);
+          tma_load_gmem_5d_box_2d<Arg::bK * 2, Arg::bM>(smem_tmp_a, &arg.tma_desc_g.map, k_offset * 2, m_offset,
+                                                        Arg::dagger ? d : d + 4, x_cb, parity, bar);
+          tma_load_gmem_4d_box_2d<Arg::bN * 2, Arg::bK>(smem_tmp_b, &arg.tma_desc_inA.map, n_offset * 2, k_offset,
+                                                        fwd_idx, their_spinor_parity, bar);
         }
 #else
         constexpr bool a_dagger = false;
@@ -399,10 +390,10 @@ namespace quda
         scale_inv_b = b.get_scale_inv();
         if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
           // Initiate bulk tensor copy: k_offset * 2 for complex
-          cde::cp_async_bulk_tensor_5d_global_to_shared(smem_tmp_a, &arg.tma_desc_g_back.map, m_offset * 2, k_offset,
-                                                        Arg::dagger ? d + 4 : d, gauge_idx, 1 - parity, *bar);
-          cde::cp_async_bulk_tensor_4d_global_to_shared(smem_tmp_b, &arg.tma_desc_inA.map, n_offset * 2, k_offset,
-                                                        back_idx, their_spinor_parity, *bar);
+          tma_load_gmem_5d_box_2d<Arg::bM * 2, Arg::bK>(smem_tmp_a, &arg.tma_desc_g_back.map, m_offset * 2, k_offset,
+                                                        Arg::dagger ? d + 4 : d, gauge_idx, 1 - parity, bar);
+          tma_load_gmem_4d_box_2d<Arg::bN * 2, Arg::bK>(smem_tmp_b, &arg.tma_desc_inA.map, n_offset * 2, k_offset,
+                                                        back_idx, their_spinor_parity, bar);
         }
 #else
         constexpr bool a_dagger = true;
@@ -488,14 +479,14 @@ namespace quda
       if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
         // Initiate bulk tensor copy: k_offset * 2 for complex
         if constexpr (Arg::dagger) {
-          cde::cp_async_bulk_tensor_5d_global_to_shared(smem_tmp_a, &arg.tma_desc_gx.map, m_offset * 2, k_offset, 0,
-                                                        x_cb, parity, *bar);
+          tma_load_gmem_5d_box_2d<Arg::bM * 2, Arg::bK>(smem_tmp_a, &arg.tma_desc_gx.map, m_offset * 2, k_offset, 0,
+                                                        x_cb, parity, bar);
         } else {
-          cde::cp_async_bulk_tensor_5d_global_to_shared(smem_tmp_a, &arg.tma_desc_gx.map, k_offset * 2, m_offset, 0,
-                                                        x_cb, parity, *bar);
+          tma_load_gmem_5d_box_2d<Arg::bK * 2, Arg::bM>(smem_tmp_a, &arg.tma_desc_gx.map, k_offset * 2, m_offset, 0,
+                                                        x_cb, parity, bar);
         }
-        cde::cp_async_bulk_tensor_4d_global_to_shared(smem_tmp_b, &arg.tma_desc_inB.map, n_offset * 2, k_offset, x_cb,
-                                                      spinor_parity, *bar);
+        tma_load_gmem_4d_box_2d<Arg::bN * 2, Arg::bK>(smem_tmp_b, &arg.tma_desc_inB.map, n_offset * 2, k_offset, x_cb,
+                                                      spinor_parity, bar);
       }
 #else
       constexpr bool a_dagger = Arg::dagger;
