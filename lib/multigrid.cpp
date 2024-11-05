@@ -122,10 +122,12 @@ namespace quda
         }
       } else {
         // create transfer operator
-        logQuda(QUDA_VERBOSE, "Creating transfer operator\n");
+        logQuda(QUDA_VERBOSE, "Creating transfer operator %s\n",
+                param.transfer_use_mma == QUDA_BOOLEAN_TRUE ? "with MMA enabled" : "");
         transfer = new Transfer(param.B, param.Nvec, param.NblockOrtho, param.blockOrthoTwoPass, param.geoBlockSize,
                                 param.spinBlockSize, param.mg_global.precision_null[param.level],
                                 param.mg_global.transfer_type[param.level]);
+        transfer->set_use_mma(param.transfer_use_mma == QUDA_BOOLEAN_TRUE);
         for (int i = 0; i < QUDA_MAX_MG_LEVEL; i++)
           param.mg_global.geo_block_size[param.level][i] = param.geoBlockSize[i];
 

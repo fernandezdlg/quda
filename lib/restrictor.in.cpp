@@ -111,7 +111,7 @@ namespace quda
   }
 
   void Restrict(cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, const ColorSpinorField &v,
-                const int *fine_to_coarse, const int *coarse_to_fine, const int *const *spin_map, int parity)
+                const int *fine_to_coarse, const int *coarse_to_fine, const int *const *spin_map, bool use_mma, int parity)
   {
     if constexpr (is_enabled_multigrid()) {
       if (v.Nspin() != 1 && out[0].GammaBasis() != v.GammaBasis())
@@ -122,7 +122,7 @@ namespace quda
       IntList<@QUDA_MULTIGRID_NC_NVEC_LIST@> fineColors;
       // clang-format on
 
-      if (in.size() % 8 == 0) {
+      if (use_mma && in.size() % 8 == 0) {
         Restrict<true>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map, parity, fineColors);
       } else {
         Restrict<false>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map, parity, fineColors);

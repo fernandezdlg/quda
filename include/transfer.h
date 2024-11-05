@@ -104,9 +104,12 @@ namespace quda {
     /** Whether the CPU transfer operator has been constructed */
     mutable bool enable_cpu = false;
 
-    /** Whether to apply the transfer operaton the GPU (requires
+    /** Whether to apply the transfer operation the GPU (requires
 	enable_gpu=true in the constructor) */
     mutable bool use_gpu;
+
+    /** Whether to apply the transfer operation with MMA */
+    mutable bool _use_mma;
 
     /** Implies whether or not the fine level is a staggered operator, in which
     case we don't actually need to allocate any memory. */
@@ -175,6 +178,8 @@ namespace quda {
      @brief for resetting the Transfer when the null vectors have changed
      */
     void reset();
+
+    void set_use_mma(bool b) const { _use_mma = b; }
 
     /**
      * Apply the prolongator
@@ -319,7 +324,7 @@ namespace quda {
      @param[in] parity of the output fine field (if single parity output field)
    */
   void Prolongate(cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, const ColorSpinorField &v,
-                  const int *fine_to_coarse, const int *const *spin_map, int parity = QUDA_INVALID_PARITY);
+                  const int *fine_to_coarse, const int *const *spin_map, bool use_mma, int parity = QUDA_INVALID_PARITY);
 
   template <int coarseColor, int fineColor>
   void Prolongate(cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, const ColorSpinorField &v,
@@ -340,7 +345,7 @@ namespace quda {
      @param[in] parity of the input fine field (if single parity input field)
    */
   void Restrict(cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, const ColorSpinorField &v,
-                const int *fine_to_coarse, const int *coarse_to_fine, const int *const *spin_map, int parity = QUDA_INVALID_PARITY);
+                const int *fine_to_coarse, const int *coarse_to_fine, const int *const *spin_map, bool use_mma, int parity = QUDA_INVALID_PARITY);
 
   template <int coarseColor, int fineColor>
   void Restrict(cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, const ColorSpinorField &v,
