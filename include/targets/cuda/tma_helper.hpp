@@ -11,6 +11,14 @@ namespace quda
     CUtensorMap map;
   };
 
+  /**
+    @brief The key and the values that defines an TMA destriptor
+    @param kRank Number of dimensions for the tensor
+    @param tensor_dims The dimensions of the tensor as it resides in the global memory space
+    @param box_dims The "box dimensions", or the dimensions of the shape that is to be loaded from
+      global memory to shared memory
+    @param ptr The global memory pointer
+   */
   template <int kRank> struct tma_descriptor_key_t {
     std::array<size_t, kRank> tensor_dims;
     std::array<size_t, kRank> box_dims;
@@ -39,6 +47,13 @@ namespace quda
     }
   };
 
+  /**
+    @brief Make a TMA descriptor out of the input key: in general the tensor strides can be non-trivial,
+      i.e., the tensor in global memory can have non-zero paddings for each dimension, but here we
+      always assume the paddings are zero; the box sizes cannot have paddings; for now we do not use
+      any non-trivial swizzle/interleave patterns, nor any non-trivial element stride.
+    @param key The input key
+   */
   template <class T, int kRank> tma_descriptor_t make_tma_descriptor(tma_descriptor_key_t<kRank> key)
   {
     CUtensorMap ret_value;
@@ -75,6 +90,10 @@ namespace quda
     return {ret_value};
   }
 
+  /**
+    @brief A helper function that implements a naive software cache for the TMA descriptors
+    @param key The input key
+   */
   template <class T, int kRank> tma_descriptor_t get_tma_descriptor(tma_descriptor_key_t<kRank> key)
   {
     static std::unordered_map<tma_descriptor_key_t<kRank>, tma_descriptor_t, tma_descriptor_hash_t<kRank>> _cache;
@@ -91,10 +110,19 @@ namespace quda
     }
   };
 
-  constexpr int tma_box_limit = 256; // TMA box sizes cannot be larger than 256
+  /**
+    @brief TMA box dimensions has a hard limit of 256 for each of the dimensions
+   */
+  constexpr int tma_box_limit = 256;
 
   /**
-    So if TMA box sizes are larger than 256, we break them into smaller pieces by keep dividing by 2
+    @brief If TMA box sizes are larger than 256, we break them into smaller pieces by keep dividing by 2;
+      For now we only consider 2-d box shapes. This is the specialization for 5-d tensors.
+    @param box_a Box shape dimension[0] 
+    @param box_b Box shape dimension[1] 
+    @param T The element type
+    @param tensor_size Tensor dimensions
+    @param ptr The tensor pointer in global memory
    */
   template <int box_a, int box_b, class T>
   inline tma_descriptor_t get_tma_descriptor_5d_box_2d(std::array<size_t, 5> tensor_size, complex<T> *ptr)
@@ -105,6 +133,15 @@ namespace quda
     return get_tma_descriptor<T, 5>(key);
   }
 
+  /**
+    @brief If TMA box sizes are larger than 256, we break them into smaller pieces by keep dividing by 2;
+      For now we only consider 2-d box shapes. This is the specialization for 4-d tensors.
+    @param box_a Box shape dimension[0] 
+    @param box_b Box shape dimension[1] 
+    @param T The element type
+    @param tensor_size Tensor dimensions
+    @param ptr The tensor pointer in global memory
+   */
   template <int box_a, int box_b, class T>
   inline tma_descriptor_t get_tma_descriptor_4d_box_2d(std::array<size_t, 4> tensor_size, complex<T> *ptr)
   {
@@ -114,6 +151,19 @@ namespace quda
     return get_tma_descriptor<T, 4>(key);
   }
 
+  /**
+    @brief Launch TMA load from a 5-d tensor in global memory to a 2-d box in shared memory; if the box sizes are larger
+      than the hard limit, break them into smaller pieces with the same way that is done when consturcting the TMA
+      descriptor.
+    @param smem_ptr The destination shared memory pointer
+    @param map Points to the TMA descriptor
+    @param offset_a Offset[0] of the tensor with which this load is to be invoked
+    @param offset_b Offset[1] of the tensor with which this load is to be invoked
+    @param offset_c Offset[2] of the tensor with which this load is to be invoked
+    @param offset_d Offset[3] of the tensor with which this load is to be invoked
+    @param offset_e Offset[4] of the tensor with which this load is to be invoked
+    @param bar The barrier object that is to be used for the TMA load
+   */
   template <int box_a, int box_b, class T>
   __device__ void inline tma_load_gmem_5d_box_2d(complex<T> *smem_ptr, const CUtensorMap *map, int offset_a,
                                                  int offset_b, int offset_c, int offset_d, int offset_e, barrier_t *bar)
@@ -131,6 +181,18 @@ namespace quda
     }
   }
 
+  /**
+    @brief Launch TMA load from a 4-d tensor in global memory to a 2-d box in shared memory; if the box sizes are larger
+      than the hard limit, break them into smaller pieces with the same way that is done when consturcting the TMA
+      descriptor.
+    @param smem_ptr The destination shared memory pointer
+    @param map Points to the TMA descriptor
+    @param offset_a Offset[0] of the tensor with which this load is to be invoked
+    @param offset_b Offset[1] of the tensor with which this load is to be invoked
+    @param offset_c Offset[2] of the tensor with which this load is to be invoked
+    @param offset_d Offset[3] of the tensor with which this load is to be invoked
+    @param bar The barrier object that is to be used for the TMA load
+   */
   template <int box_a, int box_b, class T>
   __device__ void inline tma_load_gmem_4d_box_2d(complex<T> *smem_ptr, const CUtensorMap *map, int offset_a,
                                                  int offset_b, int offset_c, int offset_d, barrier_t *bar)

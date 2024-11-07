@@ -3,6 +3,14 @@
 
 namespace quda {
 
+/**
+    @brief Thie helper class instantiates the following mapping:
+        tp.aux.x -> Bx in x_atom_size * [factors of (x + x_atom_size - 1) / x_atom_size];
+        tp.aux.y -> By in y_atom_size * [factors of (y + y_atom_size - 1) / y_atom_size];
+        tp.aux.z -> Bz in z_atom_size * [factors of (z + z_atom_size - 1) / z_atom_size];
+        tp.aux.w -> Bw in w_atom_size * [factors of (w + w_atom_size - 1) / w_atom_size].
+      See `void expand(TuneParam &tp, const qudaStream_t &stream)`
+ */
 template <class Callable, int x, int x_atom_size, int y, int y_atom_size, int z, int z_atom_size, int w, int w_atom_size>
 class expand_aux_t {
 
@@ -73,6 +81,17 @@ class expand_aux_t {
 
  public:
 
+    /**
+        @brief invoke `_callable.template launch_mma<Bx, By, Bz, Bw>(tp, stream);` based on the tp.aux values
+            tp.aux.x -> Bx in x_atom_size * [factors of (x + x_atom_size - 1) / x_atom_size];
+            tp.aux.y -> By in y_atom_size * [factors of (y + y_atom_size - 1) / y_atom_size];
+            tp.aux.z -> Bz in z_atom_size * [factors of (z + z_atom_size - 1) / z_atom_size];
+            tp.aux.w -> Bw in w_atom_size * [factors of (w + w_atom_size - 1) / w_atom_size].
+          For example, if x_atom_size = 8, x = 48, then Bx can take values in [8, 16, 24, 48]; when tp.aux.x == 0,
+          Bx = 8; when tp.aux.x == 1, Bx = 16; when tp.aux.x == 2, Bx = 24; when tp.aux.x == 3, Bx = 48.
+        @param tp The TuneParam parameter
+        @param stream The stream parameter
+     */
     void expand(TuneParam &tp, const qudaStream_t &stream)
     {
       std::make_index_sequence<IntFactorArray<(x + x_atom_size - 1) / x_atom_size>().size()> x_indices;
@@ -81,6 +100,10 @@ class expand_aux_t {
 
     expand_aux_t(Callable &callable): _callable(callable) { }
 
+    /**
+        @brief Get the Bx value
+        @param tp The TuneParam parameter
+     */
     int get_x(const TuneParam &tp) const {
       if (static_cast<unsigned int>(tp.aux.x) >= IntFactorArray<(x + x_atom_size - 1) / x_atom_size>().size()) {
         errorQuda("Invalid tp.aux.x = %d\n", tp.aux.x);
@@ -88,6 +111,10 @@ class expand_aux_t {
       return x_atom_size * get_int_factor_array((x + x_atom_size - 1) / x_atom_size)[tp.aux.x];
     }
 
+    /**
+        @brief Get the By value
+        @param tp The TuneParam parameter
+     */
     int get_y(const TuneParam &tp) const {
       if (static_cast<unsigned int>(tp.aux.y) >= IntFactorArray<(y + y_atom_size - 1) / y_atom_size>().size()) {
         errorQuda("Invalid tp.aux.y = %d\n", tp.aux.y);
@@ -95,6 +122,10 @@ class expand_aux_t {
       return y_atom_size * get_int_factor_array((y + y_atom_size - 1) / y_atom_size)[tp.aux.y];
     }
 
+    /**
+        @brief Get the Bz value
+        @param tp The TuneParam parameter
+     */
     int get_z(const TuneParam &tp) const {
       if (static_cast<unsigned int>(tp.aux.z) >= IntFactorArray<(z + z_atom_size - 1) / z_atom_size>().size()) {
         errorQuda("Invalid tp.aux.z = %d\n", tp.aux.z);
@@ -102,6 +133,10 @@ class expand_aux_t {
       return z_atom_size * get_int_factor_array((z + z_atom_size - 1) / z_atom_size)[tp.aux.z];
     }
 
+    /**
+        @brief Get the Bw value
+        @param tp The TuneParam parameter
+     */
     int get_w(const TuneParam &tp) const {
       if (static_cast<unsigned int>(tp.aux.w) >= IntFactorArray<(w + w_atom_size - 1) / w_atom_size>().size()) {
         errorQuda("Invalid tp.aux.w = %d\n", tp.aux.w);
@@ -109,6 +144,12 @@ class expand_aux_t {
       return w_atom_size * get_int_factor_array((w + w_atom_size - 1) / w_atom_size)[tp.aux.w];
     }
 
+    /**
+        @brief Advance to the next possible aux value and return true; return false we have gone to the last
+          possible value
+        @return whether or not an advance is performed
+        @param tp The TuneParam parameter
+     */
     bool advance_aux(TuneParam &param) const
     {
       auto advancer = [&](int &i, int limit) -> bool {
@@ -143,6 +184,10 @@ class expand_aux_t {
       }
     }
 
+    /**
+        @brief Initialize aux
+        @param tp The TuneParam parameter
+     */
     void init_aux(TuneParam &param) const {
       param.aux.x = 0;
       param.aux.y = 0;
