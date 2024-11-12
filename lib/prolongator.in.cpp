@@ -60,24 +60,6 @@ namespace quda
 
           bool to_non_rel = (out.Nspin() == 4) && (out[0].GammaBasis() == QUDA_UKQCD_GAMMA_BASIS);
           BlockTransposeBackward(v_out, out, to_non_rel);
-#if 0
-          std::vector<ColorSpinorField> v_cmp(out.size());
-          for (size_t i = 0; i < out.size(); i++) {
-            ColorSpinorParam param(out[i]);
-            param.create = QUDA_NULL_FIELD_CREATE;
-            v_cmp[i] = ColorSpinorField(param);
-          }
-          auto vv_cmp = make_set(v_cmp);
-          Prolongate<fineColor, coarseColor>(vv_cmp, in, v, fine_to_coarse, spin_map, parity);
-
-          blas::mxpy(out, v_cmp);
-          auto vn = blas::max(vv_cmp);
-          printf("prolongator %d->%d = ", coarseColor, fineColor);
-          for (size_t i = 0; i < vn.size(); i++) {
-            printf("%4.2e ", vn[i]);
-          }
-          printf("\n");
-#endif
         } else {
           Prolongate<fineColor, coarseColor>(out, in, v, fine_to_coarse, spin_map, parity);
         }
