@@ -50,8 +50,8 @@ namespace quda
 
     constexpr unsigned int get_index(unsigned int value) const noexcept
     {
-      unsigned int i;
-      for (i = 0; i < numFactors<Int>(); i++) {
+      unsigned int i = 0;
+      for (; i < numFactors<Int>(); i++) {
         if (Multiple * data_[i] == static_cast<unsigned int>(value)) {
           return i;
         }
