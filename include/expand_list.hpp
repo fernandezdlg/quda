@@ -16,10 +16,10 @@ class expand_aux_t {
 
   Callable &_callable;
 
-  static constexpr IntFactorArray<(x + x_atom_size - 1) / x_atom_size, x_atom_size> x_factors();
-  static constexpr IntFactorArray<(y + y_atom_size - 1) / y_atom_size, y_atom_size> y_factors();
-  static constexpr IntFactorArray<(z + z_atom_size - 1) / z_atom_size, z_atom_size> z_factors();
-  static constexpr IntFactorArray<(w + w_atom_size - 1) / w_atom_size, w_atom_size> w_factors();
+  static constexpr IntFactorArray<(x + x_atom_size - 1) / x_atom_size, x_atom_size> x_factors{};
+  static constexpr IntFactorArray<(y + y_atom_size - 1) / y_atom_size, y_atom_size> y_factors{};
+  static constexpr IntFactorArray<(z + z_atom_size - 1) / z_atom_size, z_atom_size> z_factors{};
+  static constexpr IntFactorArray<(w + w_atom_size - 1) / w_atom_size, w_atom_size> w_factors{};
 
   template <int Bx, int By, int Bz, size_t W, size_t... Ws>
     void span_w(TuneParam &tp, const qudaStream_t &stream, std::index_sequence<W, Ws...>)
