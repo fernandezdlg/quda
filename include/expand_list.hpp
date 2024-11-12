@@ -4,7 +4,7 @@
 namespace quda {
 
 /**
-    @brief Thie helper class instantiates the following mapping:
+    @brief This helper class instantiates the following mapping:
         tp.aux.x -> Bx in x_atom_size * [factors of (x + x_atom_size - 1) / x_atom_size];
         tp.aux.y -> By in y_atom_size * [factors of (y + y_atom_size - 1) / y_atom_size];
         tp.aux.z -> Bz in z_atom_size * [factors of (z + z_atom_size - 1) / z_atom_size];

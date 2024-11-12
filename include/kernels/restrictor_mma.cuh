@@ -185,7 +185,7 @@ namespace quda
       }
       __syncthreads();
 
-      block_rescale_factor = 65504.0f / block_max_all; // 65504 = the maximum FP16 number
+      block_rescale_factor = mma::numeric_limits<mma::half>::max() / block_max_all;
     }
 
     auto write_to_smem = [&](int smem_m, int smem_k, complex<store_t> a[elements_per_thread], float scale_inv_) {

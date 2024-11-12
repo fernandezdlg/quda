@@ -6,8 +6,18 @@
 
 namespace quda
 {
+
   namespace mma
   {
+
+    template <class T>
+    struct numeric_limits { };
+
+    template <>
+    struct numeric_limits<half> {
+      static constexpr float max() { return 65504.0f; }
+    };
+
     constexpr int get_tmp_pad() { return 0; }
 
     /**
@@ -471,7 +481,7 @@ namespace quda
         float block_rescale_factor = 1.0f;
         if constexpr (rescale) {
           if constexpr (fixed) {
-            block_rescale_factor = scale_inv > 0 ? 65504.0f / (scale_inv * fixedMaxValue<T>::value) : 1.0f;
+            block_rescale_factor = scale_inv > 0 ? numeric_limits<half>::max() / (scale_inv * fixedMaxValue<T>::value) : 1.0f;
           } else {
             float thread_max = 0.0f;
 #pragma unroll
@@ -510,7 +520,7 @@ namespace quda
             }
             __syncthreads();
 
-            block_rescale_factor = 65504.0f / block_max_all; // 65504 = the maximum FP16 number
+            block_rescale_factor = numeric_limits<half>::max() / block_max_all;
           }
         }
 
@@ -648,7 +658,7 @@ namespace quda
         float block_rescale_factor = 1.0f;
         if constexpr (rescale) {
           if constexpr (fixed) {
-            block_rescale_factor = scale_inv > 0 ? 65504.0f / (scale_inv * fixedMaxValue<store_t>::value) : 1.0f;
+            block_rescale_factor = scale_inv > 0 ? numeric_limits<half>::max() / (scale_inv * fixedMaxValue<store_t>::value) : 1.0f;
           } else {
             float thread_max = 0;
 #pragma unroll
@@ -675,7 +685,7 @@ namespace quda
             }
             __syncthreads();
 
-            block_rescale_factor = 65504.0f / block_max_all; // 65504 = the maximum FP16 number
+            block_rescale_factor = numeric_limits<half>::max() / block_max_all;
           }
         }
 
