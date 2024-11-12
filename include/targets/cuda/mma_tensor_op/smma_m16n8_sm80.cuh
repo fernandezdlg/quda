@@ -392,7 +392,7 @@ namespace quda
                                                   gmem_op_t &cc, const OperandC &op_c_real, const OperandC &op_c_imag,
                                                   op_t op)
       {
-        using store_t = typename gmem_op_t::store_type;
+        using store_t = typename gmem_op_t::store_t;
         using complex_t = complex<store_t>;
 
         auto *C = reinterpret_cast<complex_t *>(cc.data());

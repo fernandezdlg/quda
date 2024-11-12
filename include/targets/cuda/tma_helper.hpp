@@ -84,7 +84,7 @@ namespace quda
     if (CUDA_SUCCESS != error) {
       const char *str;
       cuGetErrorName(error, &str);
-      errorQuda("TMA descriptor creation returned %s\n", str);
+      errorQuda("TMA descriptor creation returned %s", str);
     }
 
     return {ret_value};

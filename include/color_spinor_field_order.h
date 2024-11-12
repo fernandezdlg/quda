@@ -472,7 +472,7 @@ namespace quda
     */
     template <typename Float, typename storeFloat, bool block_float_, typename norm_t> struct fieldorder_wrapper {
       using value_type = Float;      /**< Compute type */
-      using store_type = storeFloat; /**< Storage type */
+      using store_t = storeFloat; /**< Storage type */
       complex<storeFloat> *v;        /**< Field memory address this wrapper encompasses */
       const int idx;                 /**< Index into field */
     private:
@@ -858,7 +858,7 @@ namespace quda
       static constexpr int nSpin = nSpin_;
       static constexpr int nColor = nColor_;
 
-      using store_type = storeFloat;
+      using store_t = storeFloat;
 
       field<Float, storeFloat, fixed, block_float> v;
       unsigned int volumeCB = 0;

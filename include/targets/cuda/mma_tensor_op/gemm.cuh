@@ -450,7 +450,7 @@ namespace quda
        * @param a wrapper for operand A: the object needs to have the following methods:
        *        - .data() that returns the (global memory) address to which we are loading/storing
        *        - ::type the type for the computing type
-       *        - ::store_type the type for the storage type
+       *        - ::store_t the type for the storage type
        *        - ::fixed a bool indicates if the object ueses fix point format
        *        - .scale/scale_inv the scales for the fixed point format objects
        * @param b similar to a

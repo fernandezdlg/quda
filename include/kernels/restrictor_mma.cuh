@@ -128,8 +128,8 @@ namespace quda
 
         int fine_spin = (Arg::fineSpin == 1 ? 0 : fine_spin_block + coarse_spin * Arg::spin_block_factor);
         auto a_gmem = gmem(v_parity, x_fine_cb, fine_spin, fine_color, contiguous + contiguous_dim_offset);
-        complex<typename gmem_obj_t::store_type> a[elements_per_thread];
-        mma::batch_load_t<complex<typename gmem_obj_t::store_type>, elements_per_thread>::load(a, a_gmem.data());
+        complex<typename gmem_obj_t::store_t> a[elements_per_thread];
+        mma::batch_load_t<complex<typename gmem_obj_t::store_t>, elements_per_thread>::load(a, a_gmem.data());
 
         int smem_m = contiguous;
         int smem_k = (thread_idx * Arg::spin_block_factor + fine_spin_block) * Arg::fineColor + fine_color;
@@ -146,11 +146,11 @@ namespace quda
                                    int coarse_spin, int contiguous_dim_offset, int aggregate_k_offset,
                                    int *coarse_to_fine, const Arg &arg)
   {
-    constexpr int elements_per_thread = 16 / (sizeof(typename gmem_obj_t::store_type) * 2);
+    constexpr int elements_per_thread = 16 / (sizeof(typename gmem_obj_t::store_t) * 2);
     static_assert(contiguous_dim % elements_per_thread == 0, "contiguous_dim %% elements_per_thread == 0");
     float block_rescale_factor = 1.0f;
 
-    using store_t = typename gmem_obj_t::store_type;
+    using store_t = typename gmem_obj_t::store_t;
 
     if constexpr (rescale) {
       float thread_max = 0;

@@ -22,7 +22,7 @@ namespace quda
 
       static constexpr bool do_rescale()
       {
-        return true; // false because we use FP16
+        return true; // true because we use FP16
       }
 
       static constexpr int MMA_M = 16;

@@ -216,7 +216,7 @@ namespace quda
                                                   GmemOperandC &cc, const OperandC &op_c_real,
                                                   const OperandC &op_c_imag, op_t op)
       {
-        using store_t = typename GmemOperandC::store_type;
+        using store_t = typename GmemOperandC::store_t;
 
         const int row = warp_row + wrm.row_offset + (wrm.quad_thread % 2);
         const int col = warp_col + wrm.quad_col * 4 + (wrm.quad_thread / 2) * 2;

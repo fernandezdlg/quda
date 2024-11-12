@@ -257,7 +257,7 @@ namespace quda
           constexpr bool a_dagger = false;
           constexpr bool b_dagger = false;
 
-          using store_b_ghost_t = complex<typename decltype(b)::store_type>;
+          using store_b_ghost_t = complex<typename decltype(b)::store_t>;
           auto smem_tmp_b_ghost = reinterpret_cast<store_b_ghost_t *>(smem_tmp_b);
 
           __syncthreads();
@@ -303,7 +303,7 @@ namespace quda
 
           using a_wrapper_t = decltype(arg.Y(0, 0, 0, 0, 0));
           using b_wrapper_t = decltype(arg.halo.Ghost(0, 0, 0, 0, 0, 0, 0));
-          using store_b_ghost_t = complex<typename b_wrapper_t::store_type>;
+          using store_b_ghost_t = complex<typename b_wrapper_t::store_t>;
           auto smem_tmp_b_ghost = reinterpret_cast<store_b_ghost_t *>(smem_tmp_b);
           constexpr bool a_fixed = a_wrapper_t::fixed;
           constexpr bool b_fixed = b_wrapper_t::fixed;
@@ -369,7 +369,7 @@ namespace quda
           constexpr bool a_dagger = true;
           constexpr bool b_dagger = false;
 
-          using store_b_ghost_t = complex<typename decltype(b)::store_type>;
+          using store_b_ghost_t = complex<typename decltype(b)::store_t>;
           auto smem_tmp_b_ghost = reinterpret_cast<store_b_ghost_t *>(smem_tmp_b);
 
           __syncthreads();
@@ -415,7 +415,7 @@ namespace quda
 
           using a_wrapper_t = decltype(arg.Y.Ghost(0, 0, 0, 0, 0));
           using b_wrapper_t = decltype(arg.halo.Ghost(0, 0, 0, 0, 0, 0, 0));
-          using store_b_ghost_t = complex<typename b_wrapper_t::store_type>;
+          using store_b_ghost_t = complex<typename b_wrapper_t::store_t>;
           auto smem_tmp_b_ghost = reinterpret_cast<store_b_ghost_t *>(smem_tmp_b);
           constexpr bool a_fixed = a_wrapper_t::fixed;
           constexpr bool b_fixed = b_wrapper_t::fixed;

@@ -561,7 +561,7 @@ namespace quda
         auto scale_inv = gmem.get_scale_inv();
         constexpr bool fixed = GmemAccessor::fixed;
 
-        using store_t = typename GmemAccessor::store_type;
+        using store_t = typename GmemAccessor::store_t;
 
         constexpr bool x = (transpose == dagger);
 
@@ -720,7 +720,7 @@ namespace quda
       {
         constexpr bool x = (transpose == dagger);
 
-        using store_t = typename GmemAccessor::store_type;
+        using store_t = typename GmemAccessor::store_t;
 
         constexpr int n_stride = transpose == dagger ? block_y : block_z;
         constexpr int m_stride = transpose == dagger ? block_z * batch : block_y * batch;
