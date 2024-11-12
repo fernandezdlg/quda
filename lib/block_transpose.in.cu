@@ -151,8 +151,12 @@ namespace quda
     if (V.Nspin() != B[0].Nspin()) { errorQuda("V.Nspin() (=%d) != B.Nspin() (=%d)", V.Nspin(), B[0].Nspin()); }
 
     if (V.Nspin() == nSpin) {
-      IntList<@QUDA_MULTIGRID_NC_NVEC_LIST@> nColors;
-      launch_span_nColor<v_t, b_t, vFloat, bFloat, nSpin>(V, B, from_to_non_rel, nColors);
+      if constexpr (is_enabled_spin(nSpin)) {
+        IntList<@QUDA_MULTIGRID_NC_NVEC_LIST@> nColors;
+        launch_span_nColor<v_t, b_t, vFloat, bFloat, nSpin>(V, B, from_to_non_rel, nColors);
+      } else {
+        errorQuda("nSpin = %d not instantiated", nSpin);
+      }
     } else {
       if constexpr (sizeof...(N) > 0) {
         IntList<N...> nSpins_remaining;
