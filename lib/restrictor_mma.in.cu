@@ -26,14 +26,7 @@ namespace quda
     const int parity;
     int aggregate_size;
 
-    // using mma_t = typename mma::smma_dispatch<out_t>::type;
-    // using mma_t = simt::simt_t<float, 8, 4, 2, 2>;
-    // using mma_t = smma::smma_x_t<mma::half, 8, 1, 1>;
-#if (__COMPUTE_CAPABILITY__ >= 800)
-    using mma_t = hmma::hmma_tfloat32_t<4, 1, 1>;
-#else
-    using mma_t = hmma::hmma_x_t<16, 8, 8, mma::half, mma::half2>;
-#endif
+    using mma_t = typename mma::mg_mma_restrictor_t<out_t>::type;
 
     static constexpr int spin_block_factor = spin_mapper<fineSpin, coarseSpin>::get_spin_block_factor();
     static constexpr int aggregate_size_block_max = 16;

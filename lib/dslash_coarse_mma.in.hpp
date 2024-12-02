@@ -40,16 +40,7 @@ namespace quda
     mutable int color_col_stride;
     mutable int dim_threads;
 
-    // using mma_t = smma::smma_t<mma::bfloat16, 8, 1, 1>;  // 3xBF16
-    // using mma_t = smma::smma_t<mma::tfloat32, 4, 1, 1>;  // 3xTF32
-    // using mma_t = hmma::hmma_tfloat32_t<4, 1, 1>;        // 1xTF32
-    // using mma_t = mma::smma_half_t;                      // 3xFP16
-    // using mma_t = mma::hmma_t;                           // 1xFP16
-#if (__COMPUTE_CAPABILITY__ >= 800)
-    using mma_t = typename mma::smma_dispatch<yFloat>::type;
-#else
-    using mma_t = simt::simt_t<float, 8, 4, 2, 2>;
-#endif
+    using mma_t = typename mma::mg_mma_dslash_t<yFloat>::type;
 
     static constexpr int n_atom_size = mma_t::MMA_N;
     static constexpr int m_atom_size = mma_t::MMA_M;
