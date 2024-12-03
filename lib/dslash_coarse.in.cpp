@@ -1,11 +1,9 @@
 #include "multigrid.h"
+#include <multigrid.hpp>
 #include <dirac_quda.h>
 
 namespace quda
 {
-
-  template <int...> struct IntList {
-  };
 
 #if defined(QUDA_MMA_AVAILABLE)
   template <bool dagger, int Nc, int nVec, int... N>
@@ -78,17 +76,6 @@ namespace quda
       if (copy_content) { output->copy(X); }
     }
     return output;
-  }
-
-  template <class F> auto create_color_spinor_copy(cvector_ref<F> &fs, QudaFieldOrder order)
-  {
-    ColorSpinorParam param(fs[0]);
-    int nVec = (fs.size() + 7) / 8 * 8; // Make a multiple of 8
-    param.nColor = fs[0].Ncolor() * nVec;
-    param.nVec = nVec;
-    param.create = QUDA_NULL_FIELD_CREATE;
-    param.fieldOrder = order;
-    return ColorSpinorField(param);
   }
 
   // Apply the coarse Dirac matrix to a coarse grid vector

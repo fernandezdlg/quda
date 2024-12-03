@@ -138,6 +138,8 @@
 #define GPU_MULTIGRID
 #endif
 
+#cmakedefine QUDA_ENABLE_MMA
+
 #ifdef QUDA_MULTIGRID
 
 #cmakedefine QUDA_MULTIGRID_MMA_SETUP_TYPE

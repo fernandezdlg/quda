@@ -186,6 +186,7 @@ configure_file(color_spinor_pack.in.cu color_spinor_pack.cu @ONLY)
 configure_file(color_spinor_util.in.cu color_spinor_util.cu @ONLY)
 configure_file(dslash_coarse_mma.in.hpp dslash_coarse_mma.hpp @ONLY)
 configure_file(block_transpose.in.cu block_transpose.cu @ONLY)
+configure_file(multigrid.in.hpp multigrid.hpp @ONLY)
 
 if(QUDA_MULTIGRID)
   string(REPLACE "," ";" QUDA_MULTIGRID_NVEC_LIST_SEMICOLON "${QUDA_MULTIGRID_NVEC_LIST}")

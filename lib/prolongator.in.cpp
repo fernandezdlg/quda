@@ -1,11 +1,9 @@
 #include "multigrid.h"
+#include <multigrid.hpp>
 #include <blas_quda.h>
 
 namespace quda
 {
-
-  template <int...> struct IntList {
-  };
 
   template <int fineColor, int coarseColor, int nVec, int... N>
   void ProlongateMma2(ColorSpinorField &out, const ColorSpinorField &in, const ColorSpinorField &v,
@@ -19,25 +17,6 @@ namespace quda
         errorQuda("nVec = %d has not been instantiated", out.Nvec());
       }
     }
-  }
-
-  template <class F> auto create_color_spinor_copy(cvector_ref<F> &fs, QudaFieldOrder order)
-  {
-    ColorSpinorParam param(fs[0]);
-    int nVec = (fs.size() + 7) / 8 * 8; // Make a multiple of 8
-    param.nColor = fs[0].Ncolor() * nVec;
-    param.nVec = nVec;
-    param.create = QUDA_NULL_FIELD_CREATE;
-    param.fieldOrder = order;
-    return ColorSpinorField(param);
-  }
-
-  static auto create_color_spinor_copy(const ColorSpinorField &f, QudaFieldOrder order)
-  {
-    ColorSpinorParam param(f);
-    param.create = QUDA_NULL_FIELD_CREATE;
-    param.fieldOrder = order;
-    return ColorSpinorField(param);
   }
 
   template <bool use_mma, int fineColor, int coarseColor, int... N>
@@ -104,7 +83,7 @@ namespace quda
       // clang-format off
       IntList<@QUDA_MULTIGRID_NC_NVEC_LIST@> fineColors;
       // clang-format on
-      if (use_mma && in.size() % 8 == 0) {
+      if (use_mma) {
         // use MMA
         Prolongate<true>(out, in, v, fine_to_coarse, spin_map, parity, fineColors);
       } else {
