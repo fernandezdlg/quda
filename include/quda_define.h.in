@@ -138,27 +138,47 @@
 #define GPU_MULTIGRID
 #endif
 
+/**
+ * @def   QUDA_MULTIGRID
+ * @brief This macro is set when we have MMA enabled for the CUDA targets
+ */
 #cmakedefine QUDA_ENABLE_MMA
 
 #ifdef QUDA_MULTIGRID
 
 #cmakedefine QUDA_MULTIGRID_MMA_SETUP_TYPE
 #ifdef QUDA_MULTIGRID_MMA_SETUP_TYPE
+/**
+ * @def   QUDA_MULTIGRID_SETUP_*
+ * @brief This macro is used to set the MMA type used for multigrid setup
+ */
 #define QUDA_MULTIGRID_MMA_SETUP_@QUDA_MULTIGRID_MMA_SETUP_TYPE@
 #endif
 
 #cmakedefine QUDA_MULTIGRID_MMA_DSLASH_TYPE
 #ifdef QUDA_MULTIGRID_MMA_DSLASH_TYPE
+/**
+ * @def   QUDA_MULTIGRID_MMA_DSLASH_*
+ * @brief This macro is used to set the MMA type used for coarse dslash
+ */
 #define QUDA_MULTIGRID_MMA_DSLASH_@QUDA_MULTIGRID_MMA_DSLASH_TYPE@
 #endif
 
 #cmakedefine QUDA_MULTIGRID_MMA_PROLONGATOR_TYPE
 #ifdef QUDA_MULTIGRID_MMA_PROLONGATOR_TYPE
+/**
+ * @def   QUDA_MULTIGRID_MMA_PROLONGATOR_*
+ * @brief This macro is used to set the MMA type used for prolongator
+ */
 #define QUDA_MULTIGRID_MMA_PROLONGATOR_@QUDA_MULTIGRID_MMA_PROLONGATOR_TYPE@
 #endif
 
 #cmakedefine QUDA_MULTIGRID_MMA_RESTRICTOR_TYPE
 #ifdef QUDA_MULTIGRID_MMA_RESTRICTOR_TYPE
+/**
+ * @def   QUDA_MULTIGRID_MMA_RESTRICTOR_*
+ * @brief This macro is used to set the MMA type used for restrictor
+ */
 #define QUDA_MULTIGRID_MMA_RESTRICTOR_@QUDA_MULTIGRID_MMA_RESTRICTOR_TYPE@
 #endif
 
