@@ -94,9 +94,9 @@ namespace quda
                            IntList<@QUDA_MULTIGRID_NVEC_LIST@>());
       } else {
         constexpr QudaFieldOrder csOrder = QUDA_SPACE_SPIN_COLOR_FIELD_ORDER;
-        ColorSpinorField v_inA = create_color_spinor_copy(inA, csOrder);
-        ColorSpinorField v_inB = create_color_spinor_copy(inB, csOrder);
-        ColorSpinorField v_out = create_color_spinor_copy(out, csOrder);
+        auto v_inA = create_color_spinor_copy(inA, csOrder);
+        auto v_inB = create_color_spinor_copy(inB, csOrder);
+        auto v_out = create_color_spinor_copy(out, csOrder);
 
         if (dslash) { BlockTransposeForward(v_inA, inA); }
         if (clover) { BlockTransposeForward(v_inB, inB); }

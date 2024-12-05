@@ -26,9 +26,9 @@ namespace quda
       if constexpr (coarseColor >= fineColor) {
         if constexpr (use_mma) {
           constexpr QudaFieldOrder csOrder = QUDA_SPACE_SPIN_COLOR_FIELD_ORDER;
-          ColorSpinorField v_in = create_color_spinor_copy(in, csOrder);
-          ColorSpinorField v_out = create_color_spinor_copy(out, csOrder);
-          ColorSpinorField V = create_color_spinor_copy(v, csOrder);
+          auto v_in = create_color_spinor_copy(in, csOrder);
+          auto v_out = create_color_spinor_copy(out, csOrder);
+          auto V = create_color_spinor_copy(v, csOrder);
 
           bool from_non_rel = (in.Nspin() == 4) && (in[0].GammaBasis() == QUDA_UKQCD_GAMMA_BASIS);
           BlockTransposeForward(v_in, in, from_non_rel);

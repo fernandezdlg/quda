@@ -38,7 +38,7 @@ namespace quda {
     param.nVec = nVec;
     param.create = QUDA_NULL_FIELD_CREATE;
     param.fieldOrder = order;
-    return ColorSpinorField(param);
+    return getFieldTmp<ColorSpinorField>(param);
   }
 
   inline auto create_color_spinor_copy(const ColorSpinorField &f, QudaFieldOrder order)
