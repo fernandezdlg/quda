@@ -3,6 +3,7 @@
 #include <tunable_nd.h>
 #include <reference_wrapper_helper.h>
 #include <kernels/block_transpose.cuh>
+#include <int_list.hpp>
 
 /**
   @file BlockTranspose does the transpose between the two different orders of batched colorspinor fields:
@@ -110,9 +111,6 @@ namespace quda
     };
 
   } // namespace impl
-
-  template <int...> struct IntList {
-  };
 
   template <class v_t, class b_t, typename vFloat, typename bFloat, int nSpin, int nColor, int nVec, int... N>
   void launch_span_nVec(v_t &V, cvector_ref<b_t> &B, bool from_to_non_rel, IntList<nVec, N...>)

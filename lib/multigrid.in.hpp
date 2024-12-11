@@ -3,11 +3,9 @@
 #include <color_spinor_field.h>
 #include <array>
 #include <algorithm>
+#include <int_list.hpp>
 
 namespace quda {
-
-  template <int... Ints> struct IntList {
-  };
 
   template <int... Values>
   auto sort_values() {

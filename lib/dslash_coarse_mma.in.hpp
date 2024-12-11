@@ -147,7 +147,6 @@ namespace quda
       if (clover) { strcat(aux, ",clover"); }
 
       setRHSstring(aux, out[0].Nvec_actual());
-      strcat(aux, rhs_str);
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
       strcat(aux, ",use_tma");
 #endif
