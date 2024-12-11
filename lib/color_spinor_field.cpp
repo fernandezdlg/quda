@@ -97,6 +97,7 @@ namespace quda
     nColor = param.nColor;
     nSpin = param.nSpin;
     nVec = param.nVec;
+    nVec_actual = param.nVec_actual;
     twistFlavor = param.twistFlavor;
 
     if (param.pc_type != QUDA_5D_PC && param.pc_type != QUDA_4D_PC) errorQuda("Unexpected pc_type %d", param.pc_type);
@@ -229,6 +230,7 @@ namespace quda
     nColor = std::exchange(src.nColor, 0);
     nSpin = std::exchange(src.nSpin, 0);
     nVec = std::exchange(src.nVec, 0);
+    nVec_actual = std::exchange(src.nVec_actual, 0);
     twistFlavor = std::exchange(src.twistFlavor, QUDA_TWIST_INVALID);
     pc_type = std::exchange(src.pc_type, QUDA_PC_INVALID);
     suggested_parity = std::exchange(src.suggested_parity, QUDA_INVALID_PARITY);
@@ -519,6 +521,7 @@ namespace quda
     param.nColor = nColor;
     param.nSpin = nSpin;
     param.nVec = nVec;
+    param.nVec_actual = nVec_actual;
     param.twistFlavor = twistFlavor;
     param.fieldOrder = fieldOrder;
     param.setPrecision(precision, ghost_precision); // intentionally called here and not in LatticeField

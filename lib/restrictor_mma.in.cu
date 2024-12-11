@@ -80,7 +80,7 @@ namespace quda
       strcat(vol, out.VolString().c_str());
       strcat(aux, ",");
       strcat(aux, out.AuxString().c_str());
-      setRHSstring(aux, in.Nvec());
+      setRHSstring(aux, out.Nvec_actual());
 
       strcat(aux, mma_t::get_type_name().c_str());
       strcat(aux, ",aggregate_size_block_max=");
@@ -89,7 +89,7 @@ namespace quda
       apply(device::get_default_stream());
     }
 
-    long long flops() const { return nVec * 8 * fineSpin * fineColor * coarseColor * in.SiteSubset() * in.VolumeCB(); }
+    long long flops() const { return out.Nvec_actual() * 8 * fineSpin * fineColor * coarseColor * in.SiteSubset() * in.VolumeCB(); }
 
     long long bytes() const
     {

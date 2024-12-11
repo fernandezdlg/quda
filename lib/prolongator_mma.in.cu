@@ -76,7 +76,7 @@ namespace quda
       strcat(vol, out.VolString().c_str());
       strcat(aux, ",");
       strcat(aux, out.AuxString().c_str());
-      setRHSstring(aux, in.Nvec());
+      setRHSstring(aux, out.Nvec_actual());
 
       strcat(aux, mma_t::get_type_name().c_str());
 
@@ -85,7 +85,7 @@ namespace quda
 
     long long flops() const
     {
-      return nVec * 8 * fineSpin * fineColor * coarseColor * out.SiteSubset() * out.VolumeCB();
+      return out.Nvec_actual() * 8 * fineSpin * fineColor * coarseColor * out.SiteSubset() * out.VolumeCB();
     }
 
     long long bytes() const

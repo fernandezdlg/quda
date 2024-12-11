@@ -33,6 +33,7 @@ namespace quda {
   template <class F> auto create_color_spinor_copy(cvector_ref<F> &fs, QudaFieldOrder order)
   {
     ColorSpinorParam param(fs[0]);
+    param.nVec_actual = fs.size();
     int nVec = round_to_nearest_instantiated_nVec(fs.size());
     param.nColor = fs[0].Ncolor() * nVec;
     param.nVec = nVec;

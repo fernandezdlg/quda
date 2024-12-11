@@ -58,7 +58,7 @@ namespace quda
     long long flops() const
     {
       return ((dslash * 2 * nDim + clover * 1) * (8 * Ns * Nc * Ns * Nc) - 2 * Ns * Nc) * nParity
-        * static_cast<long long>(out.VolumeCB()) * out.size() * out[0].Nvec();
+        * static_cast<long long>(out.VolumeCB()) * out.size() * out[0].Nvec_actual();
     }
 
     long long bytes() const
@@ -146,9 +146,7 @@ namespace quda
       if (dslash) { strcat(aux, ",dslash"); }
       if (clover) { strcat(aux, ",clover"); }
 
-      strcat(aux, ",n_rhs=");
-      char rhs_str[16];
-      i32toa(rhs_str, out[0].Nvec());
+      setRHSstring(aux, out[0].Nvec_actual());
       strcat(aux, rhs_str);
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
       strcat(aux, ",use_tma");
