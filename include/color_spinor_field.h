@@ -320,7 +320,7 @@ namespace quda
     int nColor = 0;
     int nSpin = 0;
     int nVec = 0;
-    int nVec_actual = 0;
+    mutable int nVec_actual = 0;
 
     QudaTwistFlavorType twistFlavor = QUDA_TWIST_INVALID;
 
@@ -459,6 +459,7 @@ namespace quda
     int Nspin() const { return nSpin; }
     int Nvec() const { return nVec; }
     int Nvec_actual() const { return nVec_actual; }
+    void Nvec_actual(int nVec_actual) const { this->nVec_actual = nVec_actual; }
     QudaTwistFlavorType TwistFlavor() const { return twistFlavor; }
     int Ndim() const { return nDim; }
     const int *X() const { return x.data; }

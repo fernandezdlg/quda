@@ -294,6 +294,7 @@ namespace quda
       std::stringstream aux_ss;
       aux_ss << "vol=" << volume << ",parity=" << siteSubset << ",precision=" << precision << ",order=" << fieldOrder
              << ",Ns=" << nSpin << ",Nc=" << nColor;
+      if (nVec > 1) aux_ss << ",nVec=" << nVec;
       if (twistFlavor != QUDA_TWIST_NO && twistFlavor != QUDA_TWIST_INVALID) aux_ss << ",TwistFlavor=" << twistFlavor;
       aux_string = aux_ss.str();
       if (aux_string.size() >= TuneKey::aux_n / 2) errorQuda("Aux string too large %lu", aux_string.size());
@@ -1563,6 +1564,8 @@ namespace quda
     out << "init = " << a.init << std::endl;
     out << "nColor = " << a.nColor << std::endl;
     out << "nSpin = " << a.nSpin << std::endl;
+    out << "nVec = " << a.nVec << std::endl;
+    out << "nVec_actual = " << a.nVec_actual << std::endl;
     out << "twistFlavor = " << a.twistFlavor << std::endl;
     out << "nDim = " << a.nDim << std::endl;
     for (int d = 0; d < a.nDim; d++) out << "x[" << d << "] = " << a.x[d] << std::endl;

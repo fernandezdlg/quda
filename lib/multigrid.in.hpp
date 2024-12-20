@@ -31,10 +31,10 @@ namespace quda {
   template <class F> auto create_color_spinor_copy(cvector_ref<F> &fs, QudaFieldOrder order)
   {
     ColorSpinorParam param(fs[0]);
-    param.nVec_actual = fs.size();
     int nVec = round_to_nearest_instantiated_nVec(fs.size());
     param.nColor = fs[0].Ncolor() * nVec;
     param.nVec = nVec;
+    param.nVec_actual = fs.size();
     param.create = QUDA_NULL_FIELD_CREATE;
     param.fieldOrder = order;
     return getFieldTmp<ColorSpinorField>(param);
@@ -45,7 +45,7 @@ namespace quda {
     ColorSpinorParam param(f);
     param.create = QUDA_NULL_FIELD_CREATE;
     param.fieldOrder = order;
-    return ColorSpinorField(param);
+    return getFieldTmp<ColorSpinorField>(param);
   }
 
 }
