@@ -32,7 +32,7 @@ namespace quda
           auto v_out = create_color_spinor_copy(out, csOrder);
           auto V = create_color_spinor_copy(v, csOrder);
           BlockTransposeForward(v_in, in);
-          V.copy(v);
+          blas::copy(V, v);
 
           IntList<@QUDA_MULTIGRID_MRHS_LIST@> nvecs;
           ProlongateMma2<fineColor, coarseColor>(v_out, v_in, V, fine_to_coarse, spin_map, parity, nvecs);
