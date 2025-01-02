@@ -11,14 +11,7 @@
 #include <kernels/dslash_coarse.cuh>
 #include <mma_tensor_op/gemm.cuh>
 #include <complex_quda.h>
-
-#if (__COMPUTE_CAPABILITY__ >= 900) && (CUDA_VERSION >= 12060)
-#define USE_TENSOR_MEMORY_ACCELERATOR
-#endif
-
-#ifdef USE_TENSOR_MEMORY_ACCELERATOR
 #include <tma_helper.hpp>
-#endif
 
 namespace quda
 {

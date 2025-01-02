@@ -1,3 +1,12 @@
+#pragma once
+
+#include <quda_define.h>
+
+#if (__COMPUTE_CAPABILITY__ >= 900) && (CUDA_VERSION >= 12060)
+#define USE_TENSOR_MEMORY_ACCELERATOR
+#endif
+
+#ifdef USE_TENSOR_MEMORY_ACCELERATOR
 #include <cuda.h>
 #include <unordered_map>
 
@@ -211,3 +220,5 @@ namespace quda
   }
 
 } // namespace quda
+
+#endif
