@@ -29,6 +29,8 @@ namespace quda
     using mma_t = typename mma::mg_mma_restrictor_t<out_t>::type;
 
     static constexpr int spin_block_factor = spin_mapper<fineSpin, coarseSpin>::get_spin_block_factor();
+    // The number of fine grid aggregate to be inlucded in an thread block per iteration: this number
+    // cannot be too large due to shared memory restriction.
     static constexpr int aggregate_size_block_max = 16;
 
     static constexpr int m = nVec;
@@ -38,6 +40,9 @@ namespace quda
     static constexpr int n_atom_size = mma_t::MMA_N;
     static constexpr int m_atom_size = mma_t::MMA_M;
     static constexpr int k_atom_size = fineColor * spin_block_factor * mma_t::MMA_K;
+    // The atom for `block_y` that determines the number of threads in a thread block:
+    //    # of threads = block_y * block_z (which always equals to 8)
+    // As a result the number of threads goes from 32 to 256 threads.
     static constexpr int block_atom_size = 32 / 8;
     static constexpr int block_limit = 32;
 
@@ -191,6 +196,9 @@ namespace quda
             RestrictMma<store_t, store_t, 4, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine,
                                                                            spin_map, parity);
           } else if (in.Precision() == QUDA_HALF_PRECISION) {
+            // The half precision instantiations are disabled here and below: fixed point format with variadic
+            // scale cannot have nVec as the fastest running index since that is incompatible with the idea of
+            // having one scale float for one color spinor.
 #if 0
             if constexpr (is_enabled(QUDA_HALF_PRECISION)) {
               RestrictMma<store_t, short, 4, fineColor, coarseColor, nVec>(out, in, v,

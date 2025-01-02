@@ -31,7 +31,7 @@ class expand_aux_t {
         if constexpr (sizeof...(Ws) > 0) {
           span_w<Bx, By, Bz>(tp, stream, std::index_sequence<Ws...>());
         } else {
-          errorQuda("Invalid tp.aux.w");
+          errorQuda("Invalid tp.aux.w(=%d)", tp.aux.w);
         }
       }
     }
@@ -47,7 +47,7 @@ class expand_aux_t {
         if constexpr (sizeof...(Zs) > 0) {
           span_z<Bx, By>(tp, stream, std::index_sequence<Zs...>());
         } else {
-          errorQuda("Invalid tp.aux.z");
+          errorQuda("Invalid tp.aux.z(=%d)", tp.aux.z);
         }
       }
     }
@@ -63,7 +63,7 @@ class expand_aux_t {
         if constexpr (sizeof...(Ys) > 0) {
           span_y<Bx>(tp, stream, std::index_sequence<Ys...>());
         } else {
-          errorQuda("Invalid tp.aux.y");
+          errorQuda("Invalid tp.aux.y(=%d)", tp.aux.y);
         }
       }
     }
@@ -79,7 +79,7 @@ class expand_aux_t {
         if constexpr (sizeof...(Xs) > 0) {
           span_x(tp, stream, std::index_sequence<Xs...>());
         } else {
-          errorQuda("Invalid tp.aux.x");
+          errorQuda("Invalid tp.aux.x(=%d)", tp.aux.x);
         }
       }
     }

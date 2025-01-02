@@ -238,18 +238,14 @@ namespace quda
               s = {f2i_round<store_t>(op_c_real.reg[i * 2 + 0] * scale),
                    f2i_round<store_t>(-op_c_imag.reg[i * 2 + 0] * scale)};
               if (!check_bounds || (m_index < M && (n_index + 0) < N)) { op(&ptr[(n_index + 0) * ldc + m_index], s); }
-              // op(&ptr[(n_index + 0) * ldc + m_index], s);
               s = {f2i_round<store_t>(op_c_real.reg[i * 2 + 1] * scale),
                    f2i_round<store_t>(-op_c_imag.reg[i * 2 + 1] * scale)};
               if (!check_bounds || (m_index < M && (n_index + 1) < N)) { op(&ptr[(n_index + 1) * ldc + m_index], s); }
-              // op(&ptr[(n_index + 1) * ldc + m_index], s);
             } else {
               s = {op_c_real.reg[i * 2 + 0], -op_c_imag.reg[i * 2 + 0]};
               if (!check_bounds || (m_index < M && (n_index + 0) < N)) { op(&ptr[(n_index + 0) * ldc + m_index], s); }
-              // op(&ptr[(n_index + 0) * ldc + m_index], s);
               s = {op_c_real.reg[i * 2 + 1], -op_c_imag.reg[i * 2 + 1]};
               if (!check_bounds || (m_index < M && (n_index + 1) < N)) { op(&ptr[(n_index + 1) * ldc + m_index], s); }
-              // op(&ptr[(n_index + 1) * ldc + m_index], s);
             }
           } else {
             using array_t = typename VectorType<store_t, 4>::type; // array<store_t, 4>;

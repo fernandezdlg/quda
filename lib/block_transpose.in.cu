@@ -61,7 +61,7 @@ namespace quda
       template <typename vAccessor, typename bAccessor> void launch_device_(TuneParam &tp, const qudaStream_t &stream)
       {
         if (from_to_non_rel) {
-          if (nSpin == 4) {
+          if constexpr (nSpin == 4) {
             Arg<true, vAccessor, bAccessor, true> arg(V, B, tp.block.x, tp.block.y);
             tp.set_max_shared_bytes = true;
             launch_device<BlockTransposeKernel>(tp, stream, arg);

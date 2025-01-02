@@ -300,7 +300,7 @@ namespace quda {
        - V: spatial -> spin/color -> nVec
      @param[out] The output V Matrix field
      @param[in] B input vectors
-     @param[in] from_non_rel whether or not transform B from non-reletivistic basis
+     @param[in] from_non_rel whether or not transform B from non-relativistic basis
    */
   void BlockTransposeForward(ColorSpinorField &V, const cvector_ref<const ColorSpinorField> &B, bool from_non_rel = false);
 

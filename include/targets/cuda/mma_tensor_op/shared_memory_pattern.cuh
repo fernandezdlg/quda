@@ -13,6 +13,13 @@ namespace quda
      - destination smem is always column-major (m index goes faster)
    */
   template <class T, class load_t, bool x, int tmp_ld, int smem_ld, class Enable = void> struct tmp2s_smem_t {
+    /**
+      `get_wm` returns the size of the 2-d shape in the m direction;
+      `get_wn` returns the size of the 2-d shape in the n direction;
+      `get_number_phases` returns the number of phases for copying the full shape;
+      `get_m` returns the m-index given the lane id of a thread and the phase id;
+      `get_n` returns the n-index given the lane id of a thread and the phase id.
+     */
   };
 
   /****** Specializations for float -> float, x == true ******/
