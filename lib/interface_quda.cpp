@@ -1336,6 +1336,20 @@ void freeCloverQuda(void)
 
 void flushChronoQuda(int i) { flushChrono(i); }
 
+void flushPoolQuda(QudaMemoryType type)
+{
+  switch (type) {
+  case QUDA_MEMORY_DEVICE:
+    pool::flush_device();
+    break;
+  case QUDA_MEMORY_HOST_PINNED:
+    pool::flush_pinned();
+    break;
+  default:
+    errorQuda("MemoryType %d not supported", type);
+  }
+}
+
 void endQuda(void)
 {
   if (!initialized) return;
