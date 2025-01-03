@@ -776,11 +776,6 @@ extern "C" {
     /** Whether to use eigenvectors for the nullspace or, if the coarsest instance deflate*/
     QudaBoolean use_eig_solver[QUDA_MAX_MG_LEVEL];
 
-    /** Minimize device memory allocations during the adaptive setup,
-        placing temporary fields in mapped memory instad of device
-        memory */
-    QudaBoolean setup_minimize_memory;
-
     /** Whether to compute the null vectors or reload them */
     QudaComputeNullVector compute_null_vector;
 
