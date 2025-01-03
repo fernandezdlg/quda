@@ -149,6 +149,7 @@ namespace quda
     constexpr int elements_per_thread = 16 / (sizeof(typename gmem_obj_t::store_t) * 2);
     static_assert(contiguous_dim % elements_per_thread == 0, "contiguous_dim %% elements_per_thread == 0");
     float block_rescale_factor = 1.0f;
+    float block_rescale_factor_inv = 1.0f;
 
     using store_t = typename gmem_obj_t::store_t;
 
@@ -186,6 +187,8 @@ namespace quda
       __syncthreads();
 
       block_rescale_factor = mma::numeric_limits<mma::half>::max() / block_max_all;
+      constexpr float inv_max_half = 1.0f / mma::numeric_limits<mma::half>::max();
+      block_rescale_factor_inv = block_max_all * inv_max_half;
     }
 
     auto write_to_smem = [&](int smem_m, int smem_k, complex<store_t> a[elements_per_thread], float scale_inv_) {
@@ -236,7 +239,7 @@ namespace quda
     loop_over<contiguous_dim, contiguous_limit, elements_per_thread>(
       gmem, x_coarse, coarse_spin, contiguous_dim_offset, aggregate_k_offset, coarse_to_fine, arg, write_to_smem);
 
-    return 1.0f / block_rescale_factor;
+    return block_rescale_factor_inv;
   }
 
   template <typename Arg>

@@ -59,6 +59,8 @@ namespace quda
 
     inline __device__ float abs_max(float a, float max) { return fmaxf(fabsf(a), max); }
 
+    inline __device__ float abs_max(short a, short max) { return ::max(::abs(a), max); }
+
     inline __device__ float abs_max(float2 a, float max) { return fmaxf(fabsf(a.y), fmaxf(fabsf(a.x), max)); }
 
     template <class T, int batch> struct batch_load_t {
@@ -316,41 +318,31 @@ namespace quda
     template <bool x, bool fixed, bool dagger, int ld, class T>
     inline __device__ float find_abs_max(half2, complex<T> *p, int m_idx, int n_idx, float scale_inv)
     {
-      float this_max = 0.0f;
+      T this_max = 0;
 
       if constexpr (x) {
         auto xx = p[(m_idx + 0) * ld + n_idx];
         auto yy = p[(m_idx + 1) * ld + n_idx];
 
-        if constexpr (fixed) {
-          this_max = abs_max(scale_inv * xx.real(), this_max);
-          this_max = abs_max(scale_inv * xx.imag(), this_max);
-          this_max = abs_max(scale_inv * yy.real(), this_max);
-          this_max = abs_max(scale_inv * yy.imag(), this_max);
-        } else {
-          this_max = abs_max(xx.real(), this_max);
-          this_max = abs_max(xx.imag(), this_max);
-          this_max = abs_max(yy.real(), this_max);
-          this_max = abs_max(yy.imag(), this_max);
-        }
+        this_max = abs_max(xx.real(), this_max);
+        this_max = abs_max(xx.imag(), this_max);
+        this_max = abs_max(yy.real(), this_max);
+        this_max = abs_max(yy.imag(), this_max);
       } else {
         complex<T> v[2];
         batch_load_t<complex<T>, 2>::load(v, &p[n_idx * ld + m_idx]);
 
-        if constexpr (fixed) {
-          this_max = abs_max(scale_inv * v[0].real(), this_max);
-          this_max = abs_max(scale_inv * v[0].imag(), this_max);
-          this_max = abs_max(scale_inv * v[1].real(), this_max);
-          this_max = abs_max(scale_inv * v[1].imag(), this_max);
-        } else {
-          this_max = abs_max(v[0].real(), this_max);
-          this_max = abs_max(v[0].imag(), this_max);
-          this_max = abs_max(v[1].real(), this_max);
-          this_max = abs_max(v[1].imag(), this_max);
-        }
+        this_max = abs_max(v[0].real(), this_max);
+        this_max = abs_max(v[0].imag(), this_max);
+        this_max = abs_max(v[1].real(), this_max);
+        this_max = abs_max(v[1].imag(), this_max);
       }
 
-      return this_max;
+      if constexpr (fixed) {
+        return scale_inv * this_max;
+      } else {
+        return this_max;
+      }
     }
 
     /**
@@ -479,9 +471,13 @@ namespace quda
         constexpr int warp_cycle = (total_tiles + n_warp - 1) / n_warp;
 
         float block_rescale_factor = 1.0f;
+        float block_rescale_factor_inv = 1.0f;
         if constexpr (rescale) {
-          if constexpr (fixed) {
-            block_rescale_factor = scale_inv > 0 ? numeric_limits<half>::max() / (scale_inv * fixedMaxValue<T>::value) : 1.0f;
+          if (fixed && scale_inv > 0) {
+            float f = scale_inv * fixedMaxValue<T>::value;
+            block_rescale_factor = numeric_limits<half>::max() / f;
+            constexpr float inv_max_half = 1.0f / numeric_limits<half>::max();
+            block_rescale_factor_inv = f * inv_max_half;
           } else {
             float thread_max = 0.0f;
 #pragma unroll
@@ -521,6 +517,8 @@ namespace quda
             __syncthreads();
 
             block_rescale_factor = numeric_limits<half>::max() / block_max_all;
+            constexpr float inv_max_half = 1.0f / numeric_limits<half>::max();
+            block_rescale_factor_inv = block_max_all * inv_max_half;
           }
         }
 
@@ -549,7 +547,7 @@ namespace quda
           }
         }
 
-        return 1.0f / block_rescale_factor;
+        return block_rescale_factor_inv;
       }
 
       template <int ld, bool dagger, bool fixed, class T, class smem_accessor_t>
