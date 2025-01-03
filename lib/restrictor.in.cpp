@@ -26,18 +26,23 @@ namespace quda
       if constexpr (coarseColor >= fineColor) {
         if constexpr (use_mma) {
           constexpr QudaFieldOrder csOrder = QUDA_SPACE_SPIN_COLOR_FIELD_ORDER;
-          auto v_in = create_color_spinor_copy(in, csOrder);
-          auto v_out = create_color_spinor_copy(out, csOrder);
           auto V = create_color_spinor_copy(v, csOrder);
-
-          bool from_non_rel = (in.Nspin() == 4) && (in[0].GammaBasis() == QUDA_UKQCD_GAMMA_BASIS);
-          BlockTransposeForward(v_in, in, from_non_rel);
           blas::copy(V, v);
 
-          IntList<@QUDA_MULTIGRID_MRHS_LIST@> nvecs;
-          RestrictMma2<fineColor, coarseColor>(v_out, v_in, V, fine_to_coarse, coarse_to_fine, spin_map, parity, nvecs);
+          auto op = [&] (cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, int nVec) {
+            auto v_in = create_color_spinor_copy(in, nVec, csOrder);
+            auto v_out = create_color_spinor_copy(out, nVec, csOrder);
 
-          BlockTransposeBackward(v_out, out);
+            bool from_non_rel = (in.Nspin() == 4) && (in[0].GammaBasis() == QUDA_UKQCD_GAMMA_BASIS);
+            BlockTransposeForward(v_in, in, from_non_rel);
+
+            IntList<@QUDA_MULTIGRID_MRHS_LIST@> nvecs;
+            RestrictMma2<fineColor, coarseColor>(v_out, v_in, V, fine_to_coarse, coarse_to_fine, spin_map, parity, nvecs);
+
+            BlockTransposeBackward(v_out, out);
+          };
+
+          divide_and_conquer(op, out, in);
         } else {
           Restrict<fineColor, coarseColor>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map, parity);
         }
