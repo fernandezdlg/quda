@@ -25,12 +25,16 @@ namespace quda
 
     auto i = threadIdx.x + blockIdx.x * blockDim.x;
 
-    while (i < arg.threads.x) {
+    if constexpr (Arg::check_bounds) {
+      while (i < arg.threads.x) {
+        f(i);
+        if (grid_stride)
+          i += gridDim.x * blockDim.x;
+        else
+          break;
+      }
+    } else {
       f(i);
-      if (grid_stride)
-        i += gridDim.x * blockDim.x;
-      else
-        break;
     }
   }
 
@@ -161,15 +165,20 @@ namespace quda
     auto i = threadIdx.x + blockIdx.x * blockDim.x;
     auto j = threadIdx.y + blockIdx.y * blockDim.y;
     auto k = threadIdx.z + blockIdx.z * blockDim.z;
-    if (j >= arg.threads.y) return;
-    if (k >= arg.threads.z) return;
 
-    while (i < arg.threads.x) {
+    if constexpr (Arg::check_bounds) {
+      if (j >= arg.threads.y) return;
+      if (k >= arg.threads.z) return;
+
+      while (i < arg.threads.x) {
+        f(i, j, k);
+        if (grid_stride)
+          i += gridDim.x * blockDim.x;
+        else
+          break;
+      }
+    } else {
       f(i, j, k);
-      if (grid_stride)
-        i += gridDim.x * blockDim.x;
-      else
-        break;
     }
   }
 
