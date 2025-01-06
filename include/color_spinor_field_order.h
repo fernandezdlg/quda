@@ -581,7 +581,6 @@ namespace quda
        */
       __device__ __host__ inline auto get_scale() const
       {
-        static_assert(block_float == false, "Orders with block_float == true should not call the get_scale method.");
         return block_float ? static_cast<Float>(1) / norm[norm_idx] : scale;
       }
 

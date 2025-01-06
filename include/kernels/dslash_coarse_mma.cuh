@@ -238,7 +238,8 @@ namespace quda
     constexpr int tma_bytes
       = Arg::bK * 2 * Arg::bM * sizeof(typename Arg::yFloat) + Arg::bN * 2 * Arg::bK * sizeof(typename Arg::Float);
 
-    auto dslash_forward_producer = [&](int d, float &scale_inv_a, float &scale_inv_b, int k_offset) {
+    auto dslash_forward_producer = [&](int d, float &scale_a, float &scale_inv_a, float &scale_b, float &scale_inv_b,
+                                       int k_offset) {
       const int fwd_idx = forward_idx[d];
 
       if (forward_exterior[d]) {
@@ -255,8 +256,8 @@ namespace quda
 
           __syncthreads();
           pipe.producer_acquire();
-          scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, pipe);
-          scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b_ghost, pipe);
+          scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, scale_a, pipe);
+          scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b_ghost, scale_b, pipe);
           pipe.producer_commit();
         }
       } else if constexpr (doBulk<Arg::type>()) {
@@ -267,7 +268,9 @@ namespace quda
         __syncthreads();
 
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
+        scale_a = a.get_scale();
         scale_inv_a = a.get_scale_inv();
+        scale_b = b.get_scale();
         scale_inv_b = b.get_scale_inv();
         if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
           // Initiate bulk tensor copy: k_offset * 2 for complex
@@ -280,14 +283,15 @@ namespace quda
         constexpr bool a_dagger = false;
         constexpr bool b_dagger = false;
         pipe.producer_acquire();
-        scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, pipe);
-        scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b, pipe);
+        scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, scale_a, pipe);
+        scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b, scale_b, pipe);
         pipe.producer_commit();
 #endif
       }
     };
 
-    auto dslash_forward_consumer = [&](int d, float scale_inv_a, float scale_inv_b) -> float {
+    auto dslash_forward_consumer
+      = [&](int d, float scale_a, float scale_inv_a, float scale_b, float scale_inv_b) -> float {
       float rescale_factor;
       if (forward_exterior[d]) {
         if constexpr (doHalo<Arg::type>()) {
@@ -304,9 +308,9 @@ namespace quda
           pipe.consumer_wait();
           __syncthreads();
           float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
-            smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+            smem_tmp_a, scale_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
           float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
-            smem_tmp_b_ghost, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
+            smem_tmp_b_ghost, scale_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
           rescale_factor = a_rescale * b_rescale;
           pipe.consumer_release();
           __syncthreads();
@@ -328,9 +332,9 @@ namespace quda
         __syncthreads();
 #endif
         float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
-          smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+          smem_tmp_a, scale_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
         float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
-          smem_tmp_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
+          smem_tmp_b, scale_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
         rescale_factor = a_rescale * b_rescale;
 #ifndef USE_TENSOR_MEMORY_ACCELERATOR
         pipe.consumer_release();
@@ -350,7 +354,8 @@ namespace quda
       }
     };
 
-    auto dslash_backward_producer = [&](int d, float &scale_inv_a, float &scale_inv_b, int k_offset) {
+    auto dslash_backward_producer = [&](int d, float &scale_a, float &scale_inv_a, float &scale_b, float &scale_inv_b,
+                                        int k_offset) {
       const int back_idx = backward_idx[d];
 
       if (backward_exterior[d]) {
@@ -367,8 +372,8 @@ namespace quda
 
           __syncthreads();
           pipe.producer_acquire();
-          scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, pipe);
-          scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b_ghost, pipe);
+          scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, scale_a, pipe);
+          scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b_ghost, scale_b, pipe);
           pipe.producer_commit();
         }
       } else if constexpr (doBulk<Arg::type>()) {
@@ -379,7 +384,9 @@ namespace quda
 
         __syncthreads();
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
+        scale_a = a.get_scale();
         scale_inv_a = a.get_scale_inv();
+        scale_b = b.get_scale();
         scale_inv_b = b.get_scale_inv();
         if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
           // Initiate bulk tensor copy: k_offset * 2 for complex
@@ -392,14 +399,15 @@ namespace quda
         constexpr bool a_dagger = true;
         constexpr bool b_dagger = false;
         pipe.producer_acquire();
-        scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, pipe);
-        scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b, pipe);
+        scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, scale_a, pipe);
+        scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b, scale_b, pipe);
         pipe.producer_commit();
 #endif
       }
     };
 
-    auto dslash_backward_consumer = [&](int d, float scale_inv_a, float scale_inv_b) -> float {
+    auto dslash_backward_consumer
+      = [&](int d, float scale_a, float scale_inv_a, float scale_b, float scale_inv_b) -> float {
       float rescale_factor;
       if (backward_exterior[d]) {
         if constexpr (doHalo<Arg::type>()) {
@@ -416,9 +424,9 @@ namespace quda
           pipe.consumer_wait();
           __syncthreads();
           float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
-            smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+            smem_tmp_a, scale_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
           float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
-            smem_tmp_b_ghost, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
+            smem_tmp_b_ghost, scale_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
           rescale_factor = a_rescale * b_rescale;
           pipe.consumer_release();
           __syncthreads();
@@ -439,9 +447,9 @@ namespace quda
         __syncthreads();
 #endif
         float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
-          smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+          smem_tmp_a, scale_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
         float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
-          smem_tmp_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
+          smem_tmp_b, scale_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
         rescale_factor = a_rescale * b_rescale;
 #ifndef USE_TENSOR_MEMORY_ACCELERATOR
         pipe.consumer_release();
@@ -461,13 +469,15 @@ namespace quda
       }
     };
 
-    auto clover_producer = [&](float &scale_inv_a, float &scale_inv_b, int k_offset) {
+    auto clover_producer = [&](float &scale_a, float &scale_inv_a, float &scale_b, float &scale_inv_b, int k_offset) {
       const int spinor_parity = (arg.nParity == 2) ? parity : 0;
 
       auto a = arg.X(0, parity, x_cb, 0, 0);
       auto b = arg.inB(spinor_parity, x_cb, 0, 0);
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
+      scale_a = a.get_scale();
       scale_inv_a = a.get_scale_inv();
+      scale_b = b.get_scale();
       scale_inv_b = b.get_scale_inv();
       if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
         // Initiate bulk tensor copy: k_offset * 2 for complex
@@ -487,13 +497,13 @@ namespace quda
 
       __syncthreads();
       pipe.producer_acquire();
-      scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, pipe);
-      scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b, pipe);
+      scale_inv_a = a_loader.template g2tmp<lda, a_dagger>(a, m_offset, k_offset, smem_tmp_a, scale_a, pipe);
+      scale_inv_b = b_loader.template g2tmp<ldb, b_dagger>(b, n_offset, k_offset, smem_tmp_b, scale_b, pipe);
       pipe.producer_commit();
 #endif
     };
 
-    auto clover_consumer = [&](float scale_inv_a, float scale_inv_b) -> float {
+    auto clover_consumer = [&](float scale_a, float scale_inv_a, float scale_b, float scale_inv_b) -> float {
       constexpr bool a_dagger = Arg::dagger;
       constexpr bool b_dagger = false;
 
@@ -509,9 +519,9 @@ namespace quda
       __syncthreads();
 #endif
       float a_rescale = a_loader.template tmp2s_rescale<lda, a_dagger, a_fixed, do_rescale>(
-        smem_tmp_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
+        smem_tmp_a, scale_a, scale_inv_a, smem_obj_a_real, smem_obj_a_imag);
       float b_rescale = b_loader.template tmp2s_rescale<ldb, b_dagger, b_fixed, do_rescale>(
-        smem_tmp_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
+        smem_tmp_b, scale_b, scale_inv_b, smem_obj_b_real, smem_obj_b_imag);
 #ifndef USE_TENSOR_MEMORY_ACCELERATOR
       pipe.consumer_release();
 #endif
@@ -527,12 +537,14 @@ namespace quda
       }
     };
 
+    float scale_a;
     float scale_inv_a;
+    float scale_b;
     float scale_inv_b;
 
     if constexpr (Arg::dslash) {
 
-      dslash_forward_producer(0, scale_inv_a, scale_inv_b, 0);
+      dslash_forward_producer(0, scale_a, scale_inv_a, scale_b, scale_inv_b, 0);
 
       for (int k_offset = 0; k_offset < K; k_offset += Arg::bK) {
 
@@ -540,11 +552,11 @@ namespace quda
 #pragma unroll
         for (int d = 0; d < Arg::nDim; d++) // loop over dimension
         {
-          float rescale_factor = dslash_forward_consumer(d, scale_inv_a, scale_inv_b);
+          float rescale_factor = dslash_forward_consumer(d, scale_a, scale_inv_a, scale_b, scale_inv_b);
           if (d < 3) {
-            dslash_forward_producer(d + 1, scale_inv_a, scale_inv_b, k_offset);
+            dslash_forward_producer(d + 1, scale_a, scale_inv_a, scale_b, scale_inv_b, k_offset);
           } else {
-            dslash_backward_producer(0, scale_inv_a, scale_inv_b, k_offset);
+            dslash_backward_producer(0, scale_a, scale_inv_a, scale_b, scale_inv_b, k_offset);
           }
           dslash_forward_compute(d, rescale_factor);
         } // nDim
@@ -552,13 +564,13 @@ namespace quda
         // Backward gather - compute back offset for spinor and gauge fetch
 #pragma unroll
         for (int d = 0; d < Arg::nDim; d++) {
-          float rescale_factor = dslash_backward_consumer(d, scale_inv_a, scale_inv_b);
+          float rescale_factor = dslash_backward_consumer(d, scale_a, scale_inv_a, scale_b, scale_inv_b);
           if (d < 3) {
-            dslash_backward_producer(d + 1, scale_inv_a, scale_inv_b, k_offset);
+            dslash_backward_producer(d + 1, scale_a, scale_inv_a, scale_b, scale_inv_b, k_offset);
           } else if (k_offset + Arg::bK < K) {
-            dslash_forward_producer(0, scale_inv_a, scale_inv_b, k_offset + Arg::bK);
+            dslash_forward_producer(0, scale_a, scale_inv_a, scale_b, scale_inv_b, k_offset + Arg::bK);
           } else if constexpr (doBulk<Arg::type>() && Arg::clover) {
-            clover_producer(scale_inv_a, scale_inv_b, 0);
+            clover_producer(scale_a, scale_inv_a, scale_b, scale_inv_b, 0);
           }
           dslash_backward_compute(d, rescale_factor);
         } // nDim
@@ -572,10 +584,10 @@ namespace quda
        checkerboard site index
      */
     if constexpr (doBulk<Arg::type>() && Arg::clover) {
-      if constexpr (!Arg::dslash) { clover_producer(scale_inv_a, scale_inv_b, 0); }
+      if constexpr (!Arg::dslash) { clover_producer(scale_a, scale_inv_a, scale_b, scale_inv_b, 0); }
       for (int k_offset = 0; k_offset < K; k_offset += Arg::bK) {
-        float rescale_factor = clover_consumer(scale_inv_a, scale_inv_b);
-        if (k_offset + Arg::bK < K) { clover_producer(scale_inv_a, scale_inv_b, k_offset + Arg::bK); }
+        float rescale_factor = clover_consumer(scale_a, scale_inv_a, scale_b, scale_inv_b);
+        if (k_offset + Arg::bK < K) { clover_producer(scale_a, scale_inv_a, scale_b, scale_inv_b, k_offset + Arg::bK); }
         clover_compute(rescale_factor);
       }
     }

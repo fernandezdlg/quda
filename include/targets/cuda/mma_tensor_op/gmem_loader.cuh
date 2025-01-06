@@ -10,11 +10,10 @@ namespace quda
   namespace mma
   {
 
-    template <class T>
-    struct numeric_limits { };
+    template <class T> struct numeric_limits {
+    };
 
-    template <>
-    struct numeric_limits<half> {
+    template <> struct numeric_limits<half> {
       static constexpr float max() { return 65504.0f; }
     };
 
@@ -265,8 +264,8 @@ namespace quda
       @brief Load from global memory and store data in registers: specialized for float.
      */
     template <bool x, bool fixed, bool dagger, int ld, int batch, class T>
-    inline __device__ void convert_x_rescale(float reg_real[batch], float reg_imag[batch], complex<T> *p, int m_idx, int n_idx,
-                                             float scale_inv, float rescale)
+    inline __device__ void convert_x_rescale(float reg_real[batch], float reg_imag[batch], complex<T> *p, int m_idx,
+                                             int n_idx, float scale_inv, float rescale)
     {
       complex<T> v[batch];
       scale_inv *= rescale;
@@ -310,7 +309,6 @@ namespace quda
       constexpr float rescale = 1.0f;
       convert_x_rescale<x, fixed, dagger, ld, batch, T>(reg_real, reg_imag, p, m_idx, n_idx, scale_inv, rescale);
     }
-
 
     /**
       @brief Load from global memory and find the absolute maximum value: specialized for half2.
@@ -416,7 +414,7 @@ namespace quda
 
       template <int ld, bool dagger, class T, class gmem_accessor_t>
       __device__ inline float g2tmp(const gmem_accessor_t &gmem, int m_offset, int n_offset, complex<T> *smem_ptr,
-                                    pipeline_t &pipe)
+                                    float &scale, pipeline_t &pipe)
       {
         auto p = gmem.data();
 
@@ -444,12 +442,13 @@ namespace quda
           }
           thread_id += blockDim.x * blockDim.y * blockDim.z;
         }
+        scale = gmem.get_scale();
         return gmem.get_scale_inv();
       }
 
       template <int ld, bool dagger, bool fixed, bool rescale, class T, class smem_accessor_t>
-      __device__ inline float tmp2s_rescale(complex<T> *smem_ptr, float scale_inv, smem_accessor_t &smem_real,
-                                            smem_accessor_t &smem_imag)
+      __device__ inline float tmp2s_rescale(complex<T> *smem_ptr, float scale, float scale_inv,
+                                            smem_accessor_t &smem_real, smem_accessor_t &smem_imag)
       {
         // for each iteration, each warp loads a tile
         int thread_id = (threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x;
@@ -474,10 +473,10 @@ namespace quda
         float block_rescale_factor_inv = 1.0f;
         if constexpr (rescale) {
           if (fixed && scale_inv > 0) {
-            float f = scale_inv * fixedMaxValue<T>::value;
-            block_rescale_factor = numeric_limits<half>::max() / f;
-            constexpr float inv_max_half = 1.0f / numeric_limits<half>::max();
-            block_rescale_factor_inv = f * inv_max_half;
+            constexpr float max_half_over_max_short = numeric_limits<half>::max() / fixedMaxValue<T>::value;
+            block_rescale_factor = scale * max_half_over_max_short;
+            constexpr float max_short_over_max_half = fixedMaxValue<T>::value / numeric_limits<half>::max();
+            block_rescale_factor_inv = scale_inv * max_short_over_max_half;
           } else {
             float thread_max = 0.0f;
 #pragma unroll
@@ -489,13 +488,14 @@ namespace quda
                   int warp_m = (c * n_warp + warp_id) % tile_dim_m;
                   int warp_k = (c * n_warp + warp_id) / tile_dim_m;
 
-                  int smem_m_offset = warp_m * w_m + pattern.get_m(lane_id, p);;
-                  int smem_k_offset = warp_k * w_k + pattern.get_n(lane_id, p);;
+                  int smem_m_offset = warp_m * w_m + pattern.get_m(lane_id, p);
+                  int smem_k_offset = warp_k * w_k + pattern.get_n(lane_id, p);
 
                   int gmem_m_offset = smem_m_offset;
                   int gmem_k_offset = smem_k_offset;
 
-                  float this_max = find_abs_max<x, fixed, dagger, tmp_ld>(load_t{}, smem_ptr, gmem_m_offset, gmem_k_offset, scale_inv);
+                  float this_max = find_abs_max<x, fixed, dagger, tmp_ld>(load_t {}, smem_ptr, gmem_m_offset,
+                                                                          gmem_k_offset, scale_inv);
                   thread_max = fmaxf(this_max, thread_max);
                 }
               }
@@ -540,7 +540,8 @@ namespace quda
               load_t real;
               load_t imag;
 
-              convert_x_rescale<x, fixed, dagger, tmp_ld, 1>(&real, &imag, smem_ptr, gmem_m_offset, gmem_k_offset, scale_inv, block_rescale_factor);
+              convert_x_rescale<x, fixed, dagger, tmp_ld, 1>(&real, &imag, smem_ptr, gmem_m_offset, gmem_k_offset,
+                                                             scale_inv, block_rescale_factor);
               smem_real.vector_load(smem_m_offset, smem_k_offset, real);
               smem_imag.vector_load(smem_m_offset, smem_k_offset, imag);
             }
@@ -548,14 +549,6 @@ namespace quda
         }
 
         return block_rescale_factor_inv;
-      }
-
-      template <int ld, bool dagger, bool fixed, class T, class smem_accessor_t>
-      __device__ inline void tmp2s(complex<T> *smem_ptr, float scale_inv, smem_accessor_t &smem_real,
-                                   smem_accessor_t &smem_imag)
-      {
-        constexpr bool rescale = false;
-        tmp2s_rescale<ld, dagger, fixed, rescale>(smem_ptr, scale_inv, smem_real, smem_imag);
       }
 
       /**
@@ -656,7 +649,9 @@ namespace quda
         float block_rescale_factor = 1.0f;
         if constexpr (rescale) {
           if constexpr (fixed) {
-            block_rescale_factor = scale_inv > 0 ? numeric_limits<half>::max() / (scale_inv * fixedMaxValue<store_t>::value) : 1.0f;
+            auto scale = gmem.get_scale();
+            constexpr float max_half_over_max_short = numeric_limits<half>::max() / fixedMaxValue<store_t>::value;
+            block_rescale_factor = scale_inv > 0 ? scale * max_half_over_max_short : 1.0f;
           } else {
             float thread_max = 0;
 #pragma unroll
