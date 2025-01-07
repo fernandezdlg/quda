@@ -202,13 +202,8 @@ option(QUDA_ENABLE_MMA "Enabling using tensor core" ON)
 mark_as_advanced(QUDA_ENABLE_MMA)
 
 macro(process_mma_type MMA_TYPE)
-  if("${${MMA_TYPE}}" MATCHES "^[0-9]+$" AND "${${MMA_TYPE}}" GREATER_EQUAL "0" AND "${${MMA_TYPE}}" LESS "64")
-    math(EXPR result "${${MMA_TYPE}} % 8")
-    if(result GREATER_EQUAL 5 AND ${QUDA_COMPUTE_CAPABILITY} LESS 80)
-      message(FATAL_ERROR "${MMA_TYPE}=${${MMA_TYPE}} not available for SM 70")
-    endif()
-    math(EXPR result "${${MMA_TYPE}} / 8")
-    if(result GREATER_EQUAL 5 AND ${QUDA_COMPUTE_CAPABILITY} LESS 80)
+  if("${${MMA_TYPE}}" MATCHES "^[0-9]+$" AND "${${MMA_TYPE}}" GREATER_EQUAL "0" AND "${${MMA_TYPE}}" LESS "8")
+    if("${${MMA_TYPE}}" GREATER_EQUAL "5" AND "${QUDA_COMPUTE_CAPABILITY}" LESS "80")
       message(FATAL_ERROR "${MMA_TYPE}=${${MMA_TYPE}} not available for SM 70")
     endif()
     message(STATUS "${MMA_TYPE}=${${MMA_TYPE}}")
@@ -219,20 +214,27 @@ endmacro()
 
 if(QUDA_MULTIGRID)
 
-  set(HELP_STRING "([0-8] code for single precision) * 8 + ([0-8] for half precision):"
-    "1->SIMT; 2->SMMA; 3->1xFP16; 4->3xFP16; 5->1xTF32; 6->3xTF32; 7->3xBF16; 0->DEFAULT")
+  set(HELP_STRING "1->SIMT; 2->SMMA; 3->1xFP16; 4->3xFP16; 5->1xTF32; 6->3xTF32; 7->3xBF16; 0->DEFAULT")
 
-  set(QUDA_MULTIGRID_MMA_SETUP_TYPE "0" CACHE STRING "MMA type to be used for setup: ${HELP_STRING}")
-  process_mma_type(QUDA_MULTIGRID_MMA_SETUP_TYPE)
+  set(QUDA_MULTIGRID_MMA_SETUP_TYPE_HALF "0" CACHE STRING "MMA type to be used for setup/half: ${HELP_STRING}")
+  process_mma_type(QUDA_MULTIGRID_MMA_SETUP_TYPE_HALF)
+  set(QUDA_MULTIGRID_MMA_SETUP_TYPE_SINGLE "0" CACHE STRING "MMA type to be used for setup/single: ${HELP_STRING}")
+  process_mma_type(QUDA_MULTIGRID_MMA_SETUP_TYPE_SINGLE)
 
-  set(QUDA_MULTIGRID_MMA_DSLASH_TYPE "0" CACHE STRING "MMA type to be used for dslash: ${HELP_STRING}")
-  process_mma_type(QUDA_MULTIGRID_MMA_DSLASH_TYPE)
+  set(QUDA_MULTIGRID_MMA_DSLASH_TYPE_HALF "0" CACHE STRING "MMA type to be used for dslash/half: ${HELP_STRING}")
+  process_mma_type(QUDA_MULTIGRID_MMA_DSLASH_TYPE_HALF)
+  set(QUDA_MULTIGRID_MMA_DSLASH_TYPE_SINGLE "0" CACHE STRING "MMA type to be used for dslash/single: ${HELP_STRING}")
+  process_mma_type(QUDA_MULTIGRID_MMA_DSLASH_TYPE_SINGLE)
 
-  set(QUDA_MULTIGRID_MMA_PROLONGATOR_TYPE "0" CACHE STRING "MMA type to be used for prolongator: ${HELP_STRING}")
-  process_mma_type(QUDA_MULTIGRID_MMA_PROLONGATOR_TYPE)
+  set(QUDA_MULTIGRID_MMA_PROLONGATOR_TYPE_HALF "0" CACHE STRING "MMA type to be used for prolongator/half: ${HELP_STRING}")
+  process_mma_type(QUDA_MULTIGRID_MMA_PROLONGATOR_TYPE_HALF)
+  set(QUDA_MULTIGRID_MMA_PROLONGATOR_TYPE_SINGLE "0" CACHE STRING "MMA type to be used for prolongator/single: ${HELP_STRING}")
+  process_mma_type(QUDA_MULTIGRID_MMA_PROLONGATOR_TYPE_SINGLE)
 
-  set(QUDA_MULTIGRID_MMA_RESTRICTOR_TYPE "0" CACHE STRING "MMA type to be used for restrictor: ${HELP_STRING}")
-  process_mma_type(QUDA_MULTIGRID_MMA_RESTRICTOR_TYPE)
+  set(QUDA_MULTIGRID_MMA_RESTRICTOR_TYPE_HALF "0" CACHE STRING "MMA type to be used for restrictor/half: ${HELP_STRING}")
+  process_mma_type(QUDA_MULTIGRID_MMA_RESTRICTOR_TYPE_HALF)
+  set(QUDA_MULTIGRID_MMA_RESTRICTOR_TYPE_SINGLE "0" CACHE STRING "MMA type to be used for restrictor/single: ${HELP_STRING}")
+  process_mma_type(QUDA_MULTIGRID_MMA_RESTRICTOR_TYPE_SINGLE)
 
   string(REPLACE "," ";" QUDA_MULTIGRID_MRHS_LIST_SEMICOLON "${QUDA_MULTIGRID_MRHS_LIST}")
 
