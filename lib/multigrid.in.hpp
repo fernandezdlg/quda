@@ -51,7 +51,9 @@ namespace quda {
     }
     int instantiated_nVec = instantiated_nVec_to_use(out.size());
     size_t size = out.size();
-    printfQuda("divide_and_conquer nVec/out.size() = %d/%lu\n", instantiated_nVec, size);
+    if (getVerbosity() >= QUDA_DEBUG_VERBOSE) {
+      printfQuda("MG divide_and_conquer nVec/out.size() = %d/%lu\n", instantiated_nVec, size);
+    }
     for (size_t offset = 0; offset < size; offset += instantiated_nVec) {
       cvector_ref<ColorSpinorField> out_offseted{out.begin() + offset, out.begin() + std::min(offset + instantiated_nVec, size)};
       cvector_ref<const ColorSpinorField> in_offseted{in.begin() + offset, in.begin() + std::min(offset + instantiated_nVec, size)};
