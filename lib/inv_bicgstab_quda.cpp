@@ -27,7 +27,6 @@ namespace quda {
       getProfile().TPSTART(QUDA_PROFILE_INIT);
 
       ColorSpinorParam csParam(x[0]);
-      csParam.create = QUDA_ZERO_FIELD_CREATE;
       resize(y, b.size(), csParam);
       resize(r, b.size(), csParam);
       csParam.setPrecision(param.precision_sloppy);
@@ -40,11 +39,9 @@ namespace quda {
         if (param.compute_null_vector == QUDA_COMPUTE_NULL_VECTOR_NO) {
           create_alias(r0, b);
         } else {
-          csParam.create = QUDA_NULL_FIELD_CREATE;
           resize(r0, b.size(), csParam);
         }
       } else {
-        csParam.create = QUDA_NULL_FIELD_CREATE;
         resize(r_sloppy, b.size(), csParam);
         resize(r0, b.size(), csParam);
       }
