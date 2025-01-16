@@ -277,7 +277,7 @@ namespace quda
 #elif (QUDA_MULTIGRID_MMA_SETUP_HALF == 7)
       using type = smma::smma_t<mma::bfloat16, 8, 1, 1>;
 #elif (QUDA_MULTIGRID_MMA_SETUP_HALF == 0)
-      using type = hmma_t;
+      using type = smma_half_t;
 #endif
     };
 
@@ -298,7 +298,7 @@ namespace quda
 #elif (QUDA_MULTIGRID_MMA_SETUP_SINGLE == 7)
       using type = smma::smma_t<mma::bfloat16, 8, 1, 1>;
 #elif (QUDA_MULTIGRID_MMA_SETUP_SINGLE == 0)
-      using type = hmma_t;
+      using type = smma_half_t;
 #endif
     };
 
