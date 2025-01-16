@@ -127,13 +127,12 @@ namespace quda {
       r2 = blas::xmyNorm(b, r);
       for (auto i = 0u; i < b.size(); i++)
         if (b2[i] == 0) b2[i] = r2[i];
-      for (auto i = 0u; i < x.size(); i++) std::swap(y[i], x[i]);
-      create_alias(x_sloppy, x); // need to update alias since x has been swapped
+      blas::copy(y, x);
     } else {
       blas::copy(r, b);
       r2 = b2;
-      blas::zero(x);
     }
+    blas::zero(x);
 
     if (param.deflate && param.maxiter > 1) {
       // Deflate: Hardcoded to SVD. If maxiter == 1, this is a dummy solve
@@ -276,7 +275,6 @@ namespace quda {
         if (x.Precision() != x_sloppy[0].Precision()) blas::copy(x, x_sloppy);
 
         blas::xpy(x, y);
-
         mat(r, y);
         r2 = blas::xmyNorm(b, r);
 
