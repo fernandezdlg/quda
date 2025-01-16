@@ -125,7 +125,7 @@ namespace quda
   constexpr int tma_box_limit = 256;
 
   /**
-    @brief If TMA box sizes are larger than 256, we break them into smaller pieces by keep dividing by 2;
+    @brief TMA box sizes have to be less than or equal to 256;
       For now we only consider 2-d box shapes. This is the specialization for 5-d tensors.
     @param box_a Box shape dimension[0] 
     @param box_b Box shape dimension[1] 
@@ -136,14 +136,14 @@ namespace quda
   template <int box_a, int box_b, class T>
   inline tma_descriptor_t get_tma_descriptor_5d_box_2d(std::array<size_t, 5> tensor_size, complex<T> *ptr)
   {
-    constexpr int box_a_reduced = keep_divide_by_two_until(box_a, tma_box_limit);
-    constexpr int box_b_reduced = keep_divide_by_two_until(box_b, tma_box_limit);
-    tma_descriptor_key_t<5> key = {tensor_size, std::array<size_t, 5> {box_a_reduced, box_b_reduced, 1, 1, 1}, ptr};
+    static_assert(box_a <= tma_box_limit);
+    static_assert(box_b <= tma_box_limit);
+    tma_descriptor_key_t<5> key = {tensor_size, std::array<size_t, 5> {box_a, box_b, 1, 1, 1}, ptr};
     return get_tma_descriptor<T, 5>(key);
   }
 
   /**
-    @brief If TMA box sizes are larger than 256, we break them into smaller pieces by keep dividing by 2;
+    @brief TMA box sizes have to be less than or equal to 256;
       For now we only consider 2-d box shapes. This is the specialization for 4-d tensors.
     @param box_a Box shape dimension[0] 
     @param box_b Box shape dimension[1] 
@@ -154,16 +154,14 @@ namespace quda
   template <int box_a, int box_b, class T>
   inline tma_descriptor_t get_tma_descriptor_4d_box_2d(std::array<size_t, 4> tensor_size, complex<T> *ptr)
   {
-    constexpr int box_a_reduced = keep_divide_by_two_until(box_a, tma_box_limit);
-    constexpr int box_b_reduced = keep_divide_by_two_until(box_b, tma_box_limit);
-    tma_descriptor_key_t<4> key = {tensor_size, std::array<size_t, 4> {box_a_reduced, box_b_reduced, 1, 1}, ptr};
+    static_assert(box_a <= tma_box_limit);
+    static_assert(box_b <= tma_box_limit);
+    tma_descriptor_key_t<4> key = {tensor_size, std::array<size_t, 4> {box_a, box_b, 1, 1}, ptr};
     return get_tma_descriptor<T, 4>(key);
   }
 
   /**
-    @brief Launch TMA load from a 5-d tensor in global memory to a 2-d box in shared memory; if the box sizes are larger
-      than the hard limit, break them into smaller pieces with the same way that is done when consturcting the TMA
-      descriptor.
+    @brief Launch TMA load from a 5-d tensor in global memory to a 2-d box in shared memory.
     @param smem_ptr The destination shared memory pointer
     @param map Points to the TMA descriptor
     @param offset_a Offset[0] of the tensor with which this load is to be invoked
@@ -177,23 +175,14 @@ namespace quda
   __device__ void inline tma_load_gmem_5d_box_2d(complex<T> *smem_ptr, const CUtensorMap *map, int offset_a,
                                                  int offset_b, int offset_c, int offset_d, int offset_e, barrier_t *bar)
   {
-    constexpr int box_a_reduced = keep_divide_by_two_until(box_a, tma_box_limit);
-    constexpr int box_b_reduced = keep_divide_by_two_until(box_b, tma_box_limit);
-#pragma unroll
-    for (int i_a = 0; i_a < box_a; i_a += box_a_reduced) {
-#pragma unroll
-      for (int i_b = 0; i_b < box_b; i_b += box_b_reduced) {
-        T *smem_ptr_reduced = reinterpret_cast<T *>(smem_ptr) + (i_a + i_b * box_a);
-        cde::cp_async_bulk_tensor_5d_global_to_shared(smem_ptr_reduced, map, offset_a + i_a, offset_b + i_b, offset_c,
-                                                      offset_d, offset_e, *bar);
-      }
-    }
+    static_assert(box_a <= tma_box_limit);
+    static_assert(box_b <= tma_box_limit);
+    cde::cp_async_bulk_tensor_5d_global_to_shared(smem_ptr, map, offset_a, offset_b, offset_c,
+                                                  offset_d, offset_e, *bar);
   }
 
   /**
-    @brief Launch TMA load from a 4-d tensor in global memory to a 2-d box in shared memory; if the box sizes are larger
-      than the hard limit, break them into smaller pieces with the same way that is done when consturcting the TMA
-      descriptor.
+    @brief Launch TMA load from a 4-d tensor in global memory to a 2-d box in shared memory.
     @param smem_ptr The destination shared memory pointer
     @param map Points to the TMA descriptor
     @param offset_a Offset[0] of the tensor with which this load is to be invoked
@@ -206,17 +195,10 @@ namespace quda
   __device__ void inline tma_load_gmem_4d_box_2d(complex<T> *smem_ptr, const CUtensorMap *map, int offset_a,
                                                  int offset_b, int offset_c, int offset_d, barrier_t *bar)
   {
-    constexpr int box_a_reduced = keep_divide_by_two_until(box_a, tma_box_limit);
-    constexpr int box_b_reduced = keep_divide_by_two_until(box_b, tma_box_limit);
-#pragma unroll
-    for (int i_a = 0; i_a < box_a; i_a += box_a_reduced) {
-#pragma unroll
-      for (int i_b = 0; i_b < box_b; i_b += box_b_reduced) {
-        T *smem_ptr_reduced = reinterpret_cast<T *>(smem_ptr) + (i_a + i_b * box_a);
-        cde::cp_async_bulk_tensor_4d_global_to_shared(smem_ptr_reduced, map, offset_a + i_a, offset_b + i_b, offset_c,
-                                                      offset_d, *bar);
-      }
-    }
+    static_assert(box_a <= tma_box_limit);
+    static_assert(box_b <= tma_box_limit);
+    cde::cp_async_bulk_tensor_4d_global_to_shared(smem_ptr, map, offset_a, offset_b, offset_c,
+                                                  offset_d, *bar);
   }
 
 } // namespace quda

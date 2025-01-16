@@ -51,9 +51,15 @@ namespace quda
     static constexpr int k = Ns * Nc;
     static constexpr int block_atom_size = Ns * Nc / (Nc > 64 ? 8 : 4);
     static constexpr int block_limit = Ns * Nc / (Nc > 64 ? 2 : 1);
+#ifdef USE_TENSOR_MEMORY_ACCELERATOR
+    // We need to make sure k_limit * 2 is less then 256
+    static constexpr int k_limit = keep_divide_by_two_until(k, tma_box_limit / 2);
+#else
+    static constexpr int k_limit = k;
+#endif
 
     using this_t = DslashCoarseMma<Float, yFloat, ghostFloat, Ns, Nc, dslash, clover, dagger, type, nVec>;
-    expand_aux_t<this_t, block_limit, block_atom_size, n, n_atom_size, m, m_atom_size, k, k_atom_size> expand;
+    expand_aux_t<this_t, block_limit, block_atom_size, n, n_atom_size, m, m_atom_size, k_limit, k_atom_size> expand;
 
     long long flops() const
     {
