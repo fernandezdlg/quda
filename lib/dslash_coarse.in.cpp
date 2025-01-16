@@ -105,9 +105,7 @@ namespace quda
         }
         int instantiated_nVec = instantiated_nVec_to_use(out.size());
         size_t size = out.size();
-        if (getVerbosity() >= QUDA_DEBUG_VERBOSE) {
-          printfQuda("Dslash coarse nVec/out.size() = %d/%lu\n", instantiated_nVec, size);
-        }
+        logQuda(QUDA_DEBUG_VERBOSE, "Dslash coarse nVec/out.size() = %d/%lu\n", instantiated_nVec, size);
         for (size_t offset = 0; offset < size; offset += instantiated_nVec) {
           cvector_ref<ColorSpinorField> out_offseted{out.begin() + offset, out.begin() + std::min(offset + instantiated_nVec, size)};
           cvector_ref<const ColorSpinorField> inA_offseted{inA.begin() + offset, inA.begin() + std::min(offset + instantiated_nVec, size)};
