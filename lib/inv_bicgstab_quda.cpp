@@ -128,6 +128,7 @@ namespace quda {
     } else {
       blas::copy(r, b);
       r2 = b2;
+      blas::zero(y);
     }
     blas::zero(x);
 
