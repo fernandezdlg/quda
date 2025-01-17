@@ -7,7 +7,8 @@ namespace quda
 
   template <int fineColor, int coarseColor, int nVec, int... N>
   void ProlongateMma2(ColorSpinorField &out, const ColorSpinorField &in, const ColorSpinorField &v,
-      const int *fine_to_coarse, const int *const *spin_map, int parity, IntList<nVec, N...>) {
+                      const int *fine_to_coarse, const int *const *spin_map, int parity, IntList<nVec, N...>)
+  {
     if (out.Nvec() == nVec) {
       ProlongateMma<fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, spin_map, parity);
     } else {
@@ -30,12 +31,12 @@ namespace quda
           auto V = create_color_spinor_copy(v, csOrder);
           blas::copy(V, v);
 
-          auto op = [&] (cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, int nVec) {
+          auto op = [&](cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, int nVec) {
             auto v_in = create_color_spinor_copy(in, nVec, csOrder);
             auto v_out = create_color_spinor_copy(out, nVec, csOrder);
             BlockTransposeForward(v_in, in);
 
-            IntList<@QUDA_MULTIGRID_MRHS_LIST@> nvecs;
+            IntList<@QUDA_MULTIGRID_MRHS_LIST @> nvecs;
             ProlongateMma2<fineColor, coarseColor>(v_out, v_in, V, fine_to_coarse, spin_map, parity, nvecs);
 
             bool to_non_rel = (out.Nspin() == 4) && (out[0].GammaBasis() == QUDA_UKQCD_GAMMA_BASIS);

@@ -1,27 +1,29 @@
 #include <tune_quda.h>
 #include <int_factor_array.hpp>
 
-namespace quda {
+namespace quda
+{
 
-/**
-    @brief This helper class instantiates the following mapping:
-        tp.aux.x -> Bx in x_atom_size * [factors of (x + x_atom_size - 1) / x_atom_size];
-        tp.aux.y -> By in y_atom_size * [factors of (y + y_atom_size - 1) / y_atom_size];
-        tp.aux.z -> Bz in z_atom_size * [factors of (z + z_atom_size - 1) / z_atom_size];
-        tp.aux.w -> Bw in w_atom_size * [factors of (w + w_atom_size - 1) / w_atom_size].
-      See `void expand(TuneParam &tp, const qudaStream_t &stream)`
- */
-template <class Callable, int x, int x_atom_size, int y, int y_atom_size, int z, int z_atom_size, int w, int w_atom_size>
-class expand_aux_t {
+  /**
+      @brief This helper class instantiates the following mapping:
+          tp.aux.x -> Bx in x_atom_size * [factors of (x + x_atom_size - 1) / x_atom_size];
+          tp.aux.y -> By in y_atom_size * [factors of (y + y_atom_size - 1) / y_atom_size];
+          tp.aux.z -> Bz in z_atom_size * [factors of (z + z_atom_size - 1) / z_atom_size];
+          tp.aux.w -> Bw in w_atom_size * [factors of (w + w_atom_size - 1) / w_atom_size].
+        See `void expand(TuneParam &tp, const qudaStream_t &stream)`
+   */
+  template <class Callable, int x, int x_atom_size, int y, int y_atom_size, int z, int z_atom_size, int w, int w_atom_size>
+  class expand_aux_t
+  {
 
-  Callable &_callable;
+    Callable &_callable;
 
-  static constexpr IntFactorArray<(x + x_atom_size - 1) / x_atom_size, x_atom_size> x_factors{};
-  static constexpr IntFactorArray<(y + y_atom_size - 1) / y_atom_size, y_atom_size> y_factors{};
-  static constexpr IntFactorArray<(z + z_atom_size - 1) / z_atom_size, z_atom_size> z_factors{};
-  static constexpr IntFactorArray<(w + w_atom_size - 1) / w_atom_size, w_atom_size> w_factors{};
+    static constexpr IntFactorArray<(x + x_atom_size - 1) / x_atom_size, x_atom_size> x_factors {};
+    static constexpr IntFactorArray<(y + y_atom_size - 1) / y_atom_size, y_atom_size> y_factors {};
+    static constexpr IntFactorArray<(z + z_atom_size - 1) / z_atom_size, z_atom_size> z_factors {};
+    static constexpr IntFactorArray<(w + w_atom_size - 1) / w_atom_size, w_atom_size> w_factors {};
 
-  template <int Bx, int By, int Bz, size_t W, size_t... Ws>
+    template <int Bx, int By, int Bz, size_t W, size_t... Ws>
     void span_w(TuneParam &tp, const qudaStream_t &stream, std::index_sequence<W, Ws...>)
     {
       constexpr int Bw = w_factors[W];
@@ -36,7 +38,7 @@ class expand_aux_t {
       }
     }
 
-  template <int Bx, int By, size_t Z, size_t... Zs>
+    template <int Bx, int By, size_t Z, size_t... Zs>
     void span_z(TuneParam &tp, const qudaStream_t &stream, std::index_sequence<Z, Zs...>)
     {
       constexpr int Bz = z_factors[Z];
@@ -52,7 +54,7 @@ class expand_aux_t {
       }
     }
 
-  template <int Bx, size_t Y, size_t... Ys>
+    template <int Bx, size_t Y, size_t... Ys>
     void span_y(TuneParam &tp, const qudaStream_t &stream, std::index_sequence<Y, Ys...>)
     {
       constexpr int By = y_factors[Y];
@@ -68,7 +70,7 @@ class expand_aux_t {
       }
     }
 
-  template <size_t X, size_t... Xs>
+    template <size_t X, size_t... Xs>
     void span_x(TuneParam &tp, const qudaStream_t &stream, std::index_sequence<X, Xs...>)
     {
       constexpr int Bx = x_factors[X];
@@ -84,8 +86,7 @@ class expand_aux_t {
       }
     }
 
- public:
-
+  public:
     /**
         @brief invoke `_callable.template launch_mma<Bx, By, Bz, Bw>(tp, stream);` based on the tp.aux values
             tp.aux.x -> Bx in x_atom_size * [factors of (x + x_atom_size - 1) / x_atom_size];
@@ -103,16 +104,15 @@ class expand_aux_t {
       span_x(tp, stream, x_indices);
     }
 
-    expand_aux_t(Callable &callable): _callable(callable) { }
+    expand_aux_t(Callable &callable) : _callable(callable) { }
 
     /**
         @brief Get the Bx value
         @param tp The TuneParam parameter
      */
-    int get_x(const TuneParam &tp) const {
-      if (x_factors.get_index(tp.aux.x) >= x_factors.size()) {
-        errorQuda("Invalid tp.aux.x = %d\n", tp.aux.x);
-      }
+    int get_x(const TuneParam &tp) const
+    {
+      if (x_factors.get_index(tp.aux.x) >= x_factors.size()) { errorQuda("Invalid tp.aux.x = %d\n", tp.aux.x); }
       return tp.aux.x;
     }
 
@@ -120,10 +120,9 @@ class expand_aux_t {
         @brief Get the By value
         @param tp The TuneParam parameter
      */
-    int get_y(const TuneParam &tp) const {
-      if (y_factors.get_index(tp.aux.y) >= y_factors.size()) {
-        errorQuda("Invalid tp.aux.y = %d\n", tp.aux.y);
-      }
+    int get_y(const TuneParam &tp) const
+    {
+      if (y_factors.get_index(tp.aux.y) >= y_factors.size()) { errorQuda("Invalid tp.aux.y = %d\n", tp.aux.y); }
       return tp.aux.y;
     }
 
@@ -131,10 +130,9 @@ class expand_aux_t {
         @brief Get the Bz value
         @param tp The TuneParam parameter
      */
-    int get_z(const TuneParam &tp) const {
-      if (z_factors.get_index(tp.aux.z) >= z_factors.size()) {
-        errorQuda("Invalid tp.aux.z = %d\n", tp.aux.z);
-      }
+    int get_z(const TuneParam &tp) const
+    {
+      if (z_factors.get_index(tp.aux.z) >= z_factors.size()) { errorQuda("Invalid tp.aux.z = %d\n", tp.aux.z); }
       return tp.aux.z;
     }
 
@@ -142,15 +140,15 @@ class expand_aux_t {
         @brief Get the Bw value
         @param tp The TuneParam parameter
      */
-    int get_w(const TuneParam &tp) const {
-      if (w_factors.get_index(tp.aux.w) >= w_factors.size()) {
-        errorQuda("Invalid tp.aux.w = %d\n", tp.aux.w);
-      }
+    int get_w(const TuneParam &tp) const
+    {
+      if (w_factors.get_index(tp.aux.w) >= w_factors.size()) { errorQuda("Invalid tp.aux.w = %d\n", tp.aux.w); }
       return tp.aux.w;
     }
 
     template <unsigned int Int, unsigned int Multiple>
-    bool advancer(int &aux, TuneParam &param, const IntFactorArray<Int, Multiple> &factors) const {
+    bool advancer(int &aux, TuneParam &param, const IntFactorArray<Int, Multiple> &factors) const
+    {
       if (factors.get_index(aux) < factors.size() - 1) {
         aux = factors[factors.get_index(aux) + 1];
         return _callable.set_mma_param(param);
@@ -194,13 +192,13 @@ class expand_aux_t {
         @brief Initialize aux
         @param tp The TuneParam parameter
      */
-    void init_aux(TuneParam &param) const {
+    void init_aux(TuneParam &param) const
+    {
       param.aux.x = x_atom_size;
       param.aux.y = y_atom_size;
       param.aux.z = z_atom_size;
       param.aux.w = w_atom_size;
     }
+  };
 
-};
-
-}
+} // namespace quda

@@ -85,7 +85,7 @@ namespace quda
 
     template <typename Arg> struct CalculateYhatMMA {
       const Arg &arg;
-      constexpr CalculateYhatMMA(const Arg &arg) : arg(arg) {}
+      constexpr CalculateYhatMMA(const Arg &arg) : arg(arg) { }
       static constexpr const char *filename() { return KERNEL_FILE; }
 
       __device__ __forceinline__ void operator()()

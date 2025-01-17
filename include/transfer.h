@@ -105,7 +105,7 @@ namespace quda {
     mutable bool enable_cpu = false;
 
     /** Whether to apply the transfer operation the GPU (requires
-	enable_gpu=true in the constructor) */
+        enable_gpu=true in the constructor) */
     mutable bool use_gpu;
 
     /** Whether to apply the transfer operation with MMA */
@@ -302,7 +302,8 @@ namespace quda {
      @param[in] B input vectors
      @param[in] from_non_rel whether or not transform B from non-relativistic basis
    */
-  void BlockTransposeForward(ColorSpinorField &V, const cvector_ref<const ColorSpinorField> &B, bool from_non_rel = false);
+  void BlockTransposeForward(ColorSpinorField &V, const cvector_ref<const ColorSpinorField> &B,
+                             bool from_non_rel = false);
 
   /**
      @brief Transpose the a composite V field into B vectors:
@@ -345,7 +346,8 @@ namespace quda {
      @param[in] parity of the input fine field (if single parity input field)
    */
   void Restrict(cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, const ColorSpinorField &v,
-                const int *fine_to_coarse, const int *coarse_to_fine, const int *const *spin_map, bool use_mma, int parity = QUDA_INVALID_PARITY);
+                const int *fine_to_coarse, const int *coarse_to_fine, const int *const *spin_map, bool use_mma,
+                int parity = QUDA_INVALID_PARITY);
 
   template <int coarseColor, int fineColor>
   void Restrict(cvector_ref<ColorSpinorField> &out, cvector_ref<const ColorSpinorField> &in, const ColorSpinorField &v,
@@ -353,7 +355,8 @@ namespace quda {
 
   template <int coarseColor, int fineColor, int nVec>
   void RestrictMma(ColorSpinorField &out, const ColorSpinorField &in, const ColorSpinorField &v,
-                   const int *fine_to_coarse, const int *coarse_to_fine, const int *const *spin_map, int parity = QUDA_INVALID_PARITY);
+                   const int *fine_to_coarse, const int *coarse_to_fine, const int *const *spin_map,
+                   int parity = QUDA_INVALID_PARITY);
 
   /**
      @brief Apply the unitary "prolongation" operator for Kahler-Dirac preconditioning

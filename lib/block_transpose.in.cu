@@ -25,14 +25,16 @@ namespace quda
 
       using real = typename mapper<vFloat>::type;
       template <bool is_device, typename vOrder, typename bOrder, bool from_to_non_rel>
-      using Arg = BlockTransposeArg<v_t, b_t, is_device, vFloat, vOrder, bFloat, bOrder, nSpin, nColor, nVec, from_to_non_rel>;
+      using Arg
+        = BlockTransposeArg<v_t, b_t, is_device, vFloat, vOrder, bFloat, bOrder, nSpin, nColor, nVec, from_to_non_rel>;
 
       v_t &V;
       cvector_ref<b_t> &B;
       bool from_to_non_rel;
 
     public:
-      BlockTranspose(v_t &V, cvector_ref<b_t> &B, bool from_to_non_rel_) : TunableKernel2D(V, B.size()), V(V), B(B), from_to_non_rel(from_to_non_rel_)
+      BlockTranspose(v_t &V, cvector_ref<b_t> &B, bool from_to_non_rel_) :
+        TunableKernel2D(V, B.size()), V(V), B(B), from_to_non_rel(from_to_non_rel_)
       {
         if constexpr (std::is_const_v<v_t>) {
           strcat(aux, ",v2b");
@@ -131,7 +133,7 @@ namespace quda
   void launch_span_nColor(v_t &V, cvector_ref<b_t> &B, bool from_to_non_rel, IntList<nColor, N...>)
   {
     if (B[0].Ncolor() == nColor) {
-      IntList<@QUDA_MULTIGRID_MRHS_LIST@> nVecs;
+      IntList<@QUDA_MULTIGRID_MRHS_LIST @> nVecs;
       launch_span_nVec<v_t, b_t, vFloat, bFloat, nSpin, nColor>(V, B, from_to_non_rel, nVecs);
     } else {
       IntList<N...> nColors_remaining;
@@ -150,7 +152,7 @@ namespace quda
 
     if (V.Nspin() == nSpin) {
       if constexpr (is_enabled_spin(nSpin)) {
-        IntList<@QUDA_MULTIGRID_NC_NVEC_LIST@> nColors;
+        IntList<@QUDA_MULTIGRID_NC_NVEC_LIST @> nColors;
         launch_span_nColor<v_t, b_t, vFloat, bFloat, nSpin>(V, B, from_to_non_rel, nColors);
       } else {
         errorQuda("nSpin = %d not instantiated", nSpin);
@@ -180,7 +182,8 @@ namespace quda
         else
           errorQuda("Double precision multigrid has not been enabled");
       } else if (V.Precision() == QUDA_SINGLE_PRECISION && B[0].Precision() == QUDA_SINGLE_PRECISION) {
-        if constexpr (is_enabled(QUDA_SINGLE_PRECISION)) launch_span_nSpin<v_t, b_t, float, float>(V, B, from_to_non_rel, nSpins);
+        if constexpr (is_enabled(QUDA_SINGLE_PRECISION))
+          launch_span_nSpin<v_t, b_t, float, float>(V, B, from_to_non_rel, nSpins);
       } else {
         errorQuda("Unsupported precision combination V=%d B=%d", V.Precision(), B[0].Precision());
       }
@@ -189,8 +192,14 @@ namespace quda
     }
   }
 
-  void BlockTransposeForward(ColorSpinorField &V, cvector_ref<const ColorSpinorField> &B, bool from_non_rel) { block_transpose(V, B, from_non_rel); }
+  void BlockTransposeForward(ColorSpinorField &V, cvector_ref<const ColorSpinorField> &B, bool from_non_rel)
+  {
+    block_transpose(V, B, from_non_rel);
+  }
 
-  void BlockTransposeBackward(const ColorSpinorField &V, cvector_ref<ColorSpinorField> &B, bool to_non_rel) { block_transpose(V, B, to_non_rel); }
+  void BlockTransposeBackward(const ColorSpinorField &V, cvector_ref<ColorSpinorField> &B, bool to_non_rel)
+  {
+    block_transpose(V, B, to_non_rel);
+  }
 
 } // namespace quda

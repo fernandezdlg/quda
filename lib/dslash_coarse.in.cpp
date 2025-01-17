@@ -107,9 +107,12 @@ namespace quda
         size_t size = out.size();
         logQuda(QUDA_DEBUG_VERBOSE, "Dslash coarse nVec/out.size() = %d/%lu\n", instantiated_nVec, size);
         for (size_t offset = 0; offset < size; offset += instantiated_nVec) {
-          cvector_ref<ColorSpinorField> out_offseted{out.begin() + offset, out.begin() + std::min(offset + instantiated_nVec, size)};
-          cvector_ref<const ColorSpinorField> inA_offseted{inA.begin() + offset, inA.begin() + std::min(offset + instantiated_nVec, size)};
-          cvector_ref<const ColorSpinorField> inB_offseted{inB.begin() + offset, inB.begin() + std::min(offset + instantiated_nVec, size)};
+          cvector_ref<ColorSpinorField> out_offseted {out.begin() + offset,
+                                                      out.begin() + std::min(offset + instantiated_nVec, size)};
+          cvector_ref<const ColorSpinorField> inA_offseted {inA.begin() + offset,
+                                                            inA.begin() + std::min(offset + instantiated_nVec, size)};
+          cvector_ref<const ColorSpinorField> inB_offseted {inB.begin() + offset,
+                                                            inB.begin() + std::min(offset + instantiated_nVec, size)};
 
           constexpr QudaFieldOrder csOrder = QUDA_SPACE_SPIN_COLOR_FIELD_ORDER;
           auto v_inA = create_color_spinor_copy(inA_offseted, instantiated_nVec, csOrder);
@@ -119,8 +122,8 @@ namespace quda
           if (dslash) { BlockTransposeForward(v_inA, inA_offseted); }
           if (clover) { BlockTransposeForward(v_inB, inB_offseted); }
 
-          ApplyCoarse<true>(v_out, v_inA, v_inB, *Y_, *X_, kappa, parity, dslash, clover, dagger, commDim, halo_precision,
-                            IntList<@QUDA_MULTIGRID_NVEC_LIST@>());
+          ApplyCoarse<true>(v_out, v_inA, v_inB, *Y_, *X_, kappa, parity, dslash, clover, dagger, commDim,
+                            halo_precision, IntList<@QUDA_MULTIGRID_NVEC_LIST @>());
 
           BlockTransposeBackward(v_out, out_offseted);
         }

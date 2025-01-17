@@ -127,7 +127,7 @@ namespace quda
 
     template <typename Arg> struct ComputeUVMMA {
       const Arg &arg;
-      constexpr ComputeUVMMA(const Arg &arg) : arg(arg) {}
+      constexpr ComputeUVMMA(const Arg &arg) : arg(arg) { }
       static constexpr const char *filename() { return KERNEL_FILE; }
 
       __device__ __forceinline__ void operator()()
@@ -170,7 +170,8 @@ namespace quda
     namespace impl
     {
 
-      template <typename Arg> __device__ void computeVUV(const Arg &arg, int parity, int x_cb, int m_offset, int n_offset)
+      template <typename Arg>
+      __device__ void computeVUV(const Arg &arg, int parity, int x_cb, int m_offset, int n_offset)
       {
         constexpr int fineSpin = Arg::fineSpin;
         constexpr int coarseSpin = Arg::coarseSpin;
@@ -332,7 +333,7 @@ namespace quda
 
     template <typename Arg> struct ComputeVUVMMA {
       const Arg &arg;
-      constexpr ComputeVUVMMA(const Arg &arg) : arg(arg) {}
+      constexpr ComputeVUVMMA(const Arg &arg) : arg(arg) { }
       static constexpr const char *filename() { return KERNEL_FILE; }
 
       __device__ __forceinline__ void operator()()

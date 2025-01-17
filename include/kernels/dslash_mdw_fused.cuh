@@ -281,7 +281,7 @@ namespace quda {
     */
     template <typename Arg> struct FusedMobiusDslash {
       const Arg &arg;
-      constexpr FusedMobiusDslash(const Arg &arg) : arg(arg) {}
+      constexpr FusedMobiusDslash(const Arg &arg) : arg(arg) { }
       static constexpr const char *filename() { return KERNEL_FILE; }
 
       __device__ __forceinline__ void operator()()
@@ -356,7 +356,7 @@ namespace quda {
 
         if (Arg::type == MdwfFusedDslashType::D4_D5INV_D5INVDAG) {
           if (!Arg::reload) {                                                           // in the preload case we preload ...
-            construct_matrix_a_m5inv<M_sm, true, Arg>(arg, sm_a, 1.0, arg.beta); // dagger = true
+            construct_matrix_a_m5inv<M_sm, true, Arg>(arg, sm_a, 1.0, arg.beta);        // dagger = true
             __syncthreads();
 
 #pragma unroll

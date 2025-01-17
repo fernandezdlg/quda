@@ -94,7 +94,10 @@ namespace quda
       apply(device::get_default_stream());
     }
 
-    long long flops() const { return out.Nvec_actual() * 8 * fineSpin * fineColor * coarseColor * in.SiteSubset() * in.VolumeCB(); }
+    long long flops() const
+    {
+      return out.Nvec_actual() * 8 * fineSpin * fineColor * coarseColor * in.SiteSubset() * in.VolumeCB();
+    }
 
     long long bytes() const
     {
@@ -217,8 +220,8 @@ namespace quda
       } else if (in.Nspin() == 1) {
         if constexpr (is_enabled_spin(1)) {
           if (in.Precision() == out.Precision()) {
-            RestrictMma<store_t, store_t, 1, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map,
-                                                                  parity);
+            RestrictMma<store_t, store_t, 1, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine,
+                                                                           spin_map, parity);
           } else if (in.Precision() == QUDA_HALF_PRECISION) {
 #if 0
             if constexpr (is_enabled(QUDA_HALF_PRECISION)) {
@@ -264,7 +267,8 @@ namespace quda
 
         if (precision == QUDA_DOUBLE_PRECISION) {
           if constexpr (is_enabled_multigrid_double())
-            RestrictMma<double, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map, parity);
+            RestrictMma<double, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map,
+                                                              parity);
           else
             errorQuda("Double precision multigrid has not been enabled");
         } else if (precision == QUDA_SINGLE_PRECISION) {

@@ -127,8 +127,8 @@ namespace quda
   /**
     @brief TMA box sizes have to be less than or equal to 256;
       For now we only consider 2-d box shapes. This is the specialization for 5-d tensors.
-    @param box_a Box shape dimension[0] 
-    @param box_b Box shape dimension[1] 
+    @param box_a Box shape dimension[0]
+    @param box_b Box shape dimension[1]
     @param T The element type
     @param tensor_size Tensor dimensions
     @param ptr The tensor pointer in global memory
@@ -145,8 +145,8 @@ namespace quda
   /**
     @brief TMA box sizes have to be less than or equal to 256;
       For now we only consider 2-d box shapes. This is the specialization for 4-d tensors.
-    @param box_a Box shape dimension[0] 
-    @param box_b Box shape dimension[1] 
+    @param box_a Box shape dimension[0]
+    @param box_b Box shape dimension[1]
     @param T The element type
     @param tensor_size Tensor dimensions
     @param ptr The tensor pointer in global memory
@@ -177,8 +177,7 @@ namespace quda
   {
     static_assert(box_a <= tma_box_limit);
     static_assert(box_b <= tma_box_limit);
-    cde::cp_async_bulk_tensor_5d_global_to_shared(smem_ptr, map, offset_a, offset_b, offset_c,
-                                                  offset_d, offset_e, *bar);
+    cde::cp_async_bulk_tensor_5d_global_to_shared(smem_ptr, map, offset_a, offset_b, offset_c, offset_d, offset_e, *bar);
   }
 
   /**
@@ -197,8 +196,7 @@ namespace quda
   {
     static_assert(box_a <= tma_box_limit);
     static_assert(box_b <= tma_box_limit);
-    cde::cp_async_bulk_tensor_4d_global_to_shared(smem_ptr, map, offset_a, offset_b, offset_c,
-                                                  offset_d, *bar);
+    cde::cp_async_bulk_tensor_4d_global_to_shared(smem_ptr, map, offset_a, offset_b, offset_c, offset_d, *bar);
   }
 
 } // namespace quda

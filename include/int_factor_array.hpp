@@ -52,9 +52,7 @@ namespace quda
     {
       unsigned int i = 0;
       for (; i < numFactors<Int>(); i++) {
-        if (Multiple * data_[i] == static_cast<unsigned int>(value)) {
-          return i;
-        }
+        if (Multiple * data_[i] == static_cast<unsigned int>(value)) { return i; }
       }
       return i;
     }

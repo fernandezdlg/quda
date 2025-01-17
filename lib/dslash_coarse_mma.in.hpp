@@ -83,10 +83,7 @@ namespace quda
     */
     bool checkParam(const TuneParam &param) const { return true; }
 
-    bool advanceTuneParam(TuneParam &param) const
-    {
-      return expand.advance_aux(param);
-    }
+    bool advanceTuneParam(TuneParam &param) const { return expand.advance_aux(param); }
 
     void initTuneParam(TuneParam &param) const
     {
@@ -162,7 +159,8 @@ namespace quda
 
     static constexpr int shared_bytes_per_block(int bM, int bN, int bK)
     {
-      int bytes = mma::shared_memory_bytes<mma_t>(bM, bN, bK) + (bM + mma::get_tmp_pad()) * (bK + mma::get_tmp_pad()) * 2 * sizeof(yFloat)
+      int bytes = mma::shared_memory_bytes<mma_t>(bM, bN, bK)
+        + (bM + mma::get_tmp_pad()) * (bK + mma::get_tmp_pad()) * 2 * sizeof(yFloat)
         + (bK + mma::get_tmp_pad()) * (bN + mma::get_tmp_pad()) * 2 * sizeof(Float);
 #ifdef USE_TENSOR_MEMORY_ACCELERATOR
       return bytes + sizeof(barrier_t);
@@ -197,8 +195,7 @@ namespace quda
       return shared_bytes <= device::maximum_dynamic_shared_memory();
     }
 
-    template <int block_y, int bN, int bM, int bK>
-    void launch_mma(TuneParam &tp, const qudaStream_t &stream)
+    template <int block_y, int bN, int bM, int bK> void launch_mma(TuneParam &tp, const qudaStream_t &stream)
     {
       constexpr int shared_bytes = shared_bytes_per_block(bM, bN, bK);
       if constexpr (shared_bytes <= device::maximum_dynamic_shared_memory()) {
@@ -213,10 +210,7 @@ namespace quda
       }
     }
 
-    void launch_mma(TuneParam &tp, const qudaStream_t &stream)
-    {
-      expand.expand(tp, stream);
-    }
+    void launch_mma(TuneParam &tp, const qudaStream_t &stream) { expand.expand(tp, stream); }
 
     void apply(const qudaStream_t &stream)
     {

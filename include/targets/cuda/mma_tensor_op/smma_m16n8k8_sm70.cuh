@@ -120,20 +120,14 @@ namespace quda
         mma_instruction(acc, op_a.small, op_b.big);
         float other_acc[8];
 #pragma unroll
-        for (int x = 0; x < 8; x++) {
-          other_acc[x] = __shfl_xor_sync(0xffffffff, acc[x], 0x8);
-        }
+        for (int x = 0; x < 8; x++) { other_acc[x] = __shfl_xor_sync(0xffffffff, acc[x], 0x8); }
         int lane_id = ((threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x) % 32;
         if (lane_id / 8 % 2 == 0) {
 #pragma unroll
-          for (int x = 0; x < 4; x++) {
-            op_c.reg[x] += acc[x] + other_acc[x];
-          }
+          for (int x = 0; x < 4; x++) { op_c.reg[x] += acc[x] + other_acc[x]; }
         } else {
 #pragma unroll
-          for (int x = 0; x < 4; x++) {
-            op_c.reg[x] += acc[x + 4] + other_acc[x + 4];
-          }
+          for (int x = 0; x < 4; x++) { op_c.reg[x] += acc[x + 4] + other_acc[x + 4]; }
         }
       }
 
