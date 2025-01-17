@@ -211,14 +211,18 @@ namespace quda
                                                    const int *const *spin_map, int parity)
   {
     if constexpr (is_enabled_multigrid()) {
-      QudaPrecision precision = checkPrecision(out, in);
+      if constexpr (fineColor != 6 && coarseColor != 6) {
+        QudaPrecision precision = checkPrecision(out, in);
 
-      if (precision == QUDA_DOUBLE_PRECISION) {
-        errorQuda("ProlongateMma with double precision has not been enabled");
-      } else if (precision == QUDA_SINGLE_PRECISION) {
-        ProlongateMma<float, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, spin_map, parity);
+        if (precision == QUDA_DOUBLE_PRECISION) {
+          errorQuda("ProlongateMma with double precision has not been enabled");
+        } else if (precision == QUDA_SINGLE_PRECISION) {
+          ProlongateMma<float, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, spin_map, parity);
+        } else {
+          errorQuda("Unsupported precision %d", out.Precision());
+        }
       } else {
-        errorQuda("Unsupported precision %d", out.Precision());
+        errorQuda("fineColor=6 or coarseColor=6 have not been implemented yet: %d,%d", fineColor, coarseColor);
       }
     } else {
       errorQuda("Multigrid has not been built");

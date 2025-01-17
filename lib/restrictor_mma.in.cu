@@ -257,19 +257,23 @@ namespace quda
   {
     if constexpr (is_enabled_multigrid()) {
 
-      checkLocation(out, in, v);
-      if (in.Nspin() == 2) checkPrecision(in, out);
-      QudaPrecision precision = out.Precision();
+      if constexpr (fineColor != 6 && coarseColor != 6) {
+        checkLocation(out, in, v);
+        if (in.Nspin() == 2) checkPrecision(in, out);
+        QudaPrecision precision = out.Precision();
 
-      if (precision == QUDA_DOUBLE_PRECISION) {
-        if constexpr (is_enabled_multigrid_double())
-          RestrictMma<double, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map, parity);
-        else
-          errorQuda("Double precision multigrid has not been enabled");
-      } else if (precision == QUDA_SINGLE_PRECISION) {
-        RestrictMma<float, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map, parity);
+        if (precision == QUDA_DOUBLE_PRECISION) {
+          if constexpr (is_enabled_multigrid_double())
+            RestrictMma<double, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map, parity);
+          else
+            errorQuda("Double precision multigrid has not been enabled");
+        } else if (precision == QUDA_SINGLE_PRECISION) {
+          RestrictMma<float, fineColor, coarseColor, nVec>(out, in, v, fine_to_coarse, coarse_to_fine, spin_map, parity);
+        } else {
+          errorQuda("Unsupported precision %d", precision);
+        }
       } else {
-        errorQuda("Unsupported precision %d", precision);
+        errorQuda("fineColor=6 or coarseColor=6 have not been implemented yet: %d,%d", fineColor, coarseColor);
       }
     } else {
       errorQuda("Multigrid has not been built");
