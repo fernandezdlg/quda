@@ -133,7 +133,9 @@ namespace quda
   void launch_span_nColor(v_t &V, cvector_ref<b_t> &B, bool from_to_non_rel, IntList<nColor, N...>)
   {
     if (B[0].Ncolor() == nColor) {
-      IntList<@QUDA_MULTIGRID_MRHS_LIST @> nVecs;
+      // clang-format off
+      IntList<@QUDA_MULTIGRID_MRHS_LIST@> nVecs;
+      // clang-format on
       launch_span_nVec<v_t, b_t, vFloat, bFloat, nSpin, nColor>(V, B, from_to_non_rel, nVecs);
     } else {
       IntList<N...> nColors_remaining;
@@ -152,7 +154,9 @@ namespace quda
 
     if (V.Nspin() == nSpin) {
       if constexpr (is_enabled_spin(nSpin)) {
-        IntList<@QUDA_MULTIGRID_NC_NVEC_LIST @> nColors;
+        // clang-format off
+        IntList<@QUDA_MULTIGRID_NC_NVEC_LIST@> nColors;
+        // clang-format on
         launch_span_nColor<v_t, b_t, vFloat, bFloat, nSpin>(V, B, from_to_non_rel, nColors);
       } else {
         errorQuda("nSpin = %d not instantiated", nSpin);

@@ -36,8 +36,10 @@ namespace quda
             auto v_out = create_color_spinor_copy(out, nVec, csOrder);
             BlockTransposeForward(v_in, in);
 
-            IntList<@QUDA_MULTIGRID_MRHS_LIST @> nvecs;
-            ProlongateMma2<fineColor, coarseColor>(v_out, v_in, V, fine_to_coarse, spin_map, parity, nvecs);
+            // clang-format off
+            IntList<@QUDA_MULTIGRID_MRHS_LIST@> nVecs;
+            // clang-format on
+            ProlongateMma2<fineColor, coarseColor>(v_out, v_in, V, fine_to_coarse, spin_map, parity, nVecs);
 
             bool to_non_rel = (out.Nspin() == 4) && (out[0].GammaBasis() == QUDA_UKQCD_GAMMA_BASIS);
             BlockTransposeBackward(v_out, out, to_non_rel);

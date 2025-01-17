@@ -122,8 +122,11 @@ namespace quda
           if (dslash) { BlockTransposeForward(v_inA, inA_offseted); }
           if (clover) { BlockTransposeForward(v_inB, inB_offseted); }
 
+          // clang-format off
+          IntList<@QUDA_MULTIGRID_NVEC_LIST@> nColors;
+          // clang-format on
           ApplyCoarse<true>(v_out, v_inA, v_inB, *Y_, *X_, kappa, parity, dslash, clover, dagger, commDim,
-                            halo_precision, IntList<@QUDA_MULTIGRID_NVEC_LIST @>());
+                            halo_precision, nColors);
 
           BlockTransposeBackward(v_out, out_offseted);
         }

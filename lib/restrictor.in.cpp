@@ -40,8 +40,10 @@ namespace quda
             bool from_non_rel = (in.Nspin() == 4) && (in[0].GammaBasis() == QUDA_UKQCD_GAMMA_BASIS);
             BlockTransposeForward(v_in, in, from_non_rel);
 
-            IntList<@QUDA_MULTIGRID_MRHS_LIST @> nvecs;
-            RestrictMma2<fineColor, coarseColor>(v_out, v_in, V, fine_to_coarse, coarse_to_fine, spin_map, parity, nvecs);
+            // clang-format off
+            IntList<@QUDA_MULTIGRID_MRHS_LIST@> nVecs;
+            // clang-format on
+            RestrictMma2<fineColor, coarseColor>(v_out, v_in, V, fine_to_coarse, coarse_to_fine, spin_map, parity, nVecs);
 
             BlockTransposeBackward(v_out, out);
           };
