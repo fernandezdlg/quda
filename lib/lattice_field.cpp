@@ -331,6 +331,7 @@ namespace quda {
       ghost_pinned_send_buffer_hd[b] = nullptr;
     }
     initGhostFaceBuffer = false;
+    ghostFaceBytes = 0;
   }
 
   void LatticeField::createComms(bool no_comms_fill) const
