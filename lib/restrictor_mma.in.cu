@@ -260,7 +260,9 @@ namespace quda
   {
     if constexpr (is_enabled_multigrid()) {
 
-      if constexpr (fineColor != 6 && coarseColor != 6) {
+      if constexpr ((fineColor == 3 || fineColor == 24 || fineColor == 32 || fineColor == 64 || fineColor == 96)
+                    && (coarseColor == 24 || coarseColor == 32 || coarseColor == 64 || coarseColor == 96)
+                    && (fineColor <= coarseColor)) {
         checkLocation(out, in, v);
         if (in.Nspin() == 2) checkPrecision(in, out);
         QudaPrecision precision = out.Precision();
@@ -277,7 +279,7 @@ namespace quda
           errorQuda("Unsupported precision %d", precision);
         }
       } else {
-        errorQuda("fineColor=6 or coarseColor=6 have not been implemented yet: %d,%d", fineColor, coarseColor);
+        errorQuda("fineColor=%d or coarseColor=%d have not been implemented yet.", fineColor, coarseColor);
       }
     } else {
       errorQuda("Multigrid has not been built");
