@@ -460,6 +460,10 @@ namespace quda {
       comm_create_neighbor_event(ipcRemoteCopyEvent[b], ipcCopyEvent[b]);
     }
 
+    // zero the host-side signaling buffers
+    buffer_send_p2p = {};
+    buffer_recv_p2p = {};
+
     // Create message handles for IPC synchronization
     for (int dim = 0; dim < 4; ++dim) {
       if (comm_dim(dim) == 1) continue;
