@@ -12,12 +12,12 @@ BUILD_DIR=/pfs/lustrep1/projappl/project_465000412/juananto/software/quda/build
 #  -D CMAKE_DISABLE_SOURCE_CHANGES=ON \
 #  -D CMAKE_DISABLE_IN_SOURCE_BUILD=ON \
 
-#  -D CMAKE_C_COMPILER=${ROCM_PATH}/llvm/bin/clang \
 #  -D CMAKE_C_FLAGS="--gcc-toolchain=$GCC_PATH/snos/" \
 #  -D CMAKE_CXX_FLAGS="--gcc-toolchain=$GCC_PATH/snos/" \
-#  -D ROCM_PATH=${ROCM_PATH} \
 #  -D ROCM_CXX_FLAGS="--gcc-toolchain=$GCC_PATH/snos/" \
 cmake  \
+ -D ROCM_PATH=${ROCM_PATH} \
+ -D CMAKE_C_COMPILER=${ROCM_PATH}/llvm/bin/clang \
  -D CMAKE_CXX_COMPILER=${ROCM_PATH}/llvm/bin/clang++ \
  -D CMAKE_HIP_COMPILER=${ROCM_PATH}/llvm/bin/clang++ \
  -D CMAKE_BUILD_TYPE=Release \
